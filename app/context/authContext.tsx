@@ -19,7 +19,7 @@ interface AuthContextType {
   ) => Promise<void>;
 }
 
-export const AuthContext = createContext<AuthContextType>({
+const AuthContext = createContext<AuthContextType>({
   user: null,
   isAuthenticated: undefined,
   login: async () => {},
@@ -32,9 +32,14 @@ interface AuthProviderProps {
 
 export const AuthContextProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(undefined);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | undefined>(
+    undefined
+  );
   useEffect(() => {
-    ///on auth state change
+    //on auth state change
+    setTimeout(() => {
+      setIsAuthenticated(false);
+    }, 3000);
   });
   const login = async (email: string, password: string) => {
     try {
