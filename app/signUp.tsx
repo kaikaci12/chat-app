@@ -21,6 +21,7 @@ const SignUp = () => {
   const emailRef = useRef("");
   const passwordRef = useRef("");
   const confirmPasswordRef = useRef("");
+  const imageUrlRef = useRef("");
   const router = useRouter();
   const { register } = useAuth(); // Assuming you have a register function in your auth context
   const [loading, setLoading] = useState(false);
@@ -30,7 +31,8 @@ const SignUp = () => {
       !usernameRef.current ||
       !emailRef.current ||
       !passwordRef.current ||
-      !confirmPasswordRef.current
+      !confirmPasswordRef.current ||
+      !imageUrlRef.current
     ) {
       Alert.alert("Error", "Please fill in all fields.");
       return;
@@ -40,7 +42,6 @@ const SignUp = () => {
       Alert.alert("Error", "Passwords don't match.");
       return;
     }
-
     setLoading(true);
     try {
       // await register(usernameRef.current, emailRef.current, passwordRef.current);
@@ -93,6 +94,13 @@ const SignUp = () => {
           placeholder="Confirm Password"
           placeholderTextColor="#999"
           secureTextEntry={true}
+        />
+        <TextInput
+          onChangeText={(text) => (imageUrlRef.current = text)}
+          style={styles.input}
+          placeholder="Image URL"
+          placeholderTextColor="#999"
+          autoCapitalize="none"
         />
       </View>
 
