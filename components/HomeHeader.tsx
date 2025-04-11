@@ -114,7 +114,7 @@ const optionsStyles = {
 const styles = StyleSheet.create({
   container: {
     width: wp("100%"),
-    height: hp("10%"),
+    height: hp(13),
     backgroundColor: "#25D366",
     justifyContent: "flex-end",
     paddingHorizontal: wp("5%"),
