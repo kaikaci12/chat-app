@@ -1,14 +1,20 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Button, StyleSheet, Text, View } from "react-native";
 import React from "react";
+import { useAuth } from "../context/authContext";
 
-const home = () => {
+const Home = () => {
+  const { logout } = useAuth();
+  const handleLogout = async () => {
+    await logout();
+  };
   return (
-    <View>
-      <Text>home</Text>
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+      <Text>Home</Text>
+      <Button title="Sign Out" onPress={handleLogout} />
     </View>
   );
 };
 
-export default home;
+export default Home;
 
 const styles = StyleSheet.create({});

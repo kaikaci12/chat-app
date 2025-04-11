@@ -27,8 +27,12 @@ const SignIn = () => {
       Alert.alert("Error", "Please fill in all fields.");
       return;
     }
-    // login();
-    // router.replace("/home");
+    setLoading(true);
+    const response = await login(emailRef.current, passwordRef.current);
+    setLoading(false);
+    if (!response.success) {
+      Alert.alert("Sign In", response.msg);
+    }
   };
 
   return (
