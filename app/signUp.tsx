@@ -21,7 +21,7 @@ const SignUp = () => {
   const emailRef = useRef("");
   const passwordRef = useRef("");
   const confirmPasswordRef = useRef("");
-  const imageUrlRef = useRef("");
+  const profileUrl = useRef("");
   const router = useRouter();
   const { register } = useAuth(); // Assuming you have a register function in your auth context
   const [loading, setLoading] = useState(false);
@@ -32,7 +32,7 @@ const SignUp = () => {
       !emailRef.current ||
       !passwordRef.current ||
       !confirmPasswordRef.current ||
-      !imageUrlRef.current
+      !profileUrl.current
     ) {
       Alert.alert("Error", "Please fill in all fields.");
       return;
@@ -44,8 +44,17 @@ const SignUp = () => {
     }
     setLoading(true);
     try {
-      // await register(usernameRef.current, emailRef.current, passwordRef.current);
-      // router.replace("/home");
+      let response = await register(
+        emailRef.current,
+        passwordRef.current,
+        usernameRef.current,
+        profileUrl.current
+      );
+      setLoading(false);
+      console.log("got resluts", response);
+      if (!response.success) {
+        Alert.alert("Sign Up", response.msg);
+      }
     } catch (error: any) {
       Alert.alert("Error", error.message);
     } finally {
@@ -96,7 +105,7 @@ const SignUp = () => {
           secureTextEntry={true}
         />
         <TextInput
-          onChangeText={(text) => (imageUrlRef.current = text)}
+          onChangeText={(text) => (profileUrl.current = text)}
           style={styles.input}
           placeholder="Image URL"
           placeholderTextColor="#999"

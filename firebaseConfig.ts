@@ -1,9 +1,12 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import {
+  browserLocalPersistence,
+  getAuth,
+  initializeAuth,
+} from "firebase/auth";
+import { collection, getFirestore } from "firebase/firestore";
+import AsyncStorage from "@react-native-async-storage/async-storage"; // Import directly
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCpEeY6BQY3_DOXcbCNvkVLq1RdzW2vodg",
   authDomain: "social-media-8aede.firebaseapp.com",
@@ -13,5 +16,10 @@ const firebaseConfig = {
   appId: "1:213686090121:web:bd4e441dbdb5146c9c0958",
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+export const auth = getAuth(app);
+
+export const db = getFirestore(app);
+export const userRef = collection(db, "users");
+export const roomRef = collection(db, "rooms");

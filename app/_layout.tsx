@@ -12,7 +12,8 @@ import "react-native-reanimated";
 import { Slot } from "expo-router";
 import { useColorScheme } from "@/components/useColorScheme";
 import { View, StyleSheet } from "react-native";
-import { AuthContextProvider, useAuth } from "./context/authContext";
+import { useAuth } from "./context/authContext";
+import AuthContextProvider from "./context/authContext";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -45,9 +46,3 @@ export default function RootLayout() {
     </AuthContextProvider>
   );
 }
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-});

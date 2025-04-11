@@ -1,11 +1,16 @@
 import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+} from "firebase/auth";
+import {
   createContext,
   useEffect,
   useState,
   ReactNode,
   useContext,
 } from "react";
-
+import { auth, db } from "@/firebaseConfig";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 interface AuthContextType {
   user: any;
   isAuthenticated: boolean | undefined;
@@ -16,7 +21,7 @@ interface AuthContextType {
     password: string,
     username: string,
     profileUrl: string
-  ) => Promise<void>;
+  ) => Promise<{ success: boolean; data?: any; msg?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -24,23 +29,29 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: undefined,
   login: async () => {},
   logout: async () => {},
-  register: async () => {},
+  register: async () => ({ success: false }),
 });
 interface AuthProviderProps {
   children: ReactNode;
 }
 
-export const AuthContextProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser] = useState(null);
+const AuthContextProvider = ({ children }: AuthProviderProps) => {
+  const [user, setUser] = useState<any>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | undefined>(
     undefined
   );
   useEffect(() => {
-    //on auth state change
-    setTimeout(() => {
-      setIsAuthenticated(false);
-    }, 3000);
-  });
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setIsAuthenticated(true);
+        setUser(user);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
+      }
+    });
+    return unsub;
+  }, []);
   const login = async (email: string, password: string) => {
     try {
     } catch (error) {}
@@ -56,11 +67,31 @@ export const AuthContextProvider = ({ children }: AuthProviderProps) => {
     profileUrl: string
   ) => {
     try {
-    } catch (error) {}
+      const response = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      console.log("response ", response?.user);
+      const docRef = doc(db, "users", response?.user?.uid);
+
+      await setDoc(docRef, {
+        username,
+        profileUrl,
+        userId: response?.user?.uid,
+      });
+      return { success: true, data: response?.user };
+    } catch (error: any) {
+      let msg = error.message;
+      if (msg.includes("(auth/invalid-email)")) msg = "Invalid email address";
+
+      return { success: false, msg };
+    }
   };
   const value = { user, isAuthenticated, login, logout, register };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+export default AuthContextProvider;
 export const useAuth = () => {
   const value = useContext(AuthContext);
   if (!value) {
