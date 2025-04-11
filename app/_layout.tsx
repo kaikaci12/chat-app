@@ -14,7 +14,7 @@ import { useColorScheme } from "@/components/useColorScheme";
 import { View, StyleSheet } from "react-native";
 import { useAuth } from "./context/authContext";
 import AuthContextProvider from "./context/authContext";
-
+import { MenuProvider } from "react-native-popup-menu";
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
@@ -41,8 +41,10 @@ const MainLayout = () => {
 
 export default function RootLayout() {
   return (
-    <AuthContextProvider>
-      <MainLayout />
-    </AuthContextProvider>
+    <MenuProvider>
+      <AuthContextProvider>
+        <MainLayout />
+      </AuthContextProvider>
+    </MenuProvider>
   );
 }

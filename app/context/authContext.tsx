@@ -3,6 +3,8 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
+  setPersistence,
+  browserLocalPersistence,
 } from "firebase/auth";
 import {
   createContext,
@@ -59,12 +61,20 @@ const AuthContextProvider = ({ children }: AuthProviderProps) => {
         const parsedUser = JSON.parse(savedUser);
         setUser(parsedUser);
         setIsAuthenticated(true);
+
+        // Manually set the Firebase Auth state
+        const currentUser = await signInWithEmailAndPassword(
+          auth,
+          parsedUser.email,
+          parsedUser.password
+        );
+        setUser(currentUser.user);
       } else {
         setIsAuthenticated(false);
       }
     };
 
-    loadUser(); // Load user data
+    loadUser(); // Load user data from AsyncStorage
 
     // Firebase auth state listener (for real-time updates)
     const unsub = onAuthStateChanged(auth, async (user) => {
