@@ -3,14 +3,16 @@ import React from "react";
 import ChatItem from "./ChatItem";
 import { Feather } from "@expo/vector-icons";
 
-const ChatList = ({ users }: any) => {
+const ChatList = ({ users, currentUser }: any) => {
   return (
     <View style={styles.container}>
       {users?.length > 0 ? (
         <FlatList
           data={users}
           keyExtractor={(item) => item.userId}
-          renderItem={({ item }) => <ChatItem item={item} />}
+          renderItem={({ item }) => (
+            <ChatItem currentUser={currentUser} item={item} />
+          )}
           showsVerticalScrollIndicator={false}
         />
       ) : (

@@ -33,12 +33,12 @@ const Home = () => {
     if (user?.userId) {
       getUser();
     }
-  }, [user.userId]);
+  }, [user?.userId]);
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
       {users.length > 0 ? (
-        <ChatList users={users} />
+        <ChatList users={users} currentUser={user} />
       ) : (
         <View style={{ flex: 1, alignItems: "center", top: hp(13) }}>
           <ActivityIndicator size="large" color={"green"} />

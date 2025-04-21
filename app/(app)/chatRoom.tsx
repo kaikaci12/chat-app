@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Platform,
   Alert,
+  KeyboardAvoidingView,
 } from "react-native";
 import React, { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -18,19 +19,38 @@ import {
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useAuth } from "../context/authContext";
 import { getRoomId } from "@/utils/common";
-import { setDoc, doc, Timestamp, collection, addDoc } from "firebase/firestore";
+import {
+  setDoc,
+  doc,
+  Timestamp,
+  collection,
+  addDoc,
+  query,
+  orderBy,
+} from "firebase/firestore";
 import { db } from "@/firebaseConfig";
-
+import { onSnapshot } from "firebase/firestore";
 const ChatRoom = () => {
   const item = useLocalSearchParams(); //user who is chatting with
   const router = useRouter();
   const { user } = useAuth();
-  const [messages, setMessages] = useState([]); // Assuming you have a messages state to hold chat messages
+  const [messages, setMessages] = useState<any>([]); // Assuming you have a messages state to hold chat messages
   const [textRef, setTextRef] = useState<string>("");
   const inputRef = useRef<any | null>(null);
-
+  const scrollViewRef = useRef<any | null>(null);
   useEffect(() => {
     createRoomIfNotExists();
+    let roomId = getRoomId(user?.userId, item?.userId as string);
+    const docRef = doc(db, "rooms", roomId);
+    const messagesRef = collection(docRef, "messages");
+    const q = query(messagesRef, orderBy("createdAt", "asc"));
+    let unsub = onSnapshot(q, (snap) => {
+      let allMessages = snap.docs.map((doc: any) => {
+        return doc.data();
+      });
+      setMessages([...allMessages]);
+    });
+    return unsub;
   }, []);
   const createRoomIfNotExists = async () => {
     if (user?.userId) {
@@ -41,11 +61,16 @@ const ChatRoom = () => {
       });
     }
   };
+  useEffect(() => {
+    updateScrollView();
+  }, [messages]);
+  const updateScrollView = () => {
+    setTimeout(() => {
+      scrollViewRef.current.scrollToEnd({ animated: true });
+    }, 1000);
+  };
 
   const handleSendMessage = async () => {
-    if (Platform.OS === "android") {
-      inputRef.current.blur(); // Hide the keyboard on Android
-    }
     const message = textRef.trim();
     if (!message) {
       return;
@@ -56,7 +81,11 @@ const ChatRoom = () => {
         const docRef = doc(db, "rooms", roomId);
         const messages = collection(docRef, "messages");
         setTextRef("");
-        if (inputRef) inputRef.current.clear();
+        if (inputRef.current) {
+          inputRef.current.clear();
+
+          inputRef.current.focus();
+        }
         const newDoc = await addDoc(messages, {
           userId: user?.userId,
           text: message,
@@ -70,6 +99,7 @@ const ChatRoom = () => {
       Alert.alert("Message", error.message);
     }
   };
+
   return (
     <View style={styles.container}>
       <StatusBar style="dark" />
@@ -78,7 +108,11 @@ const ChatRoom = () => {
       <View style={styles.headerBottom} />
       <View style={styles.messageContainer}>
         <View style={{ flex: 1 }}>
-          <MessageList messages={messages} />
+          <MessageList
+            scrollViewRef={scrollViewRef}
+            messages={messages}
+            currentUser={user}
+          />
         </View>
         <View style={styles.inputWrapper}>
           <View style={[styles.messageInput, { height: hp(6) }]}>
@@ -86,11 +120,12 @@ const ChatRoom = () => {
               style={styles.input}
               placeholder="Type message..."
               multiline
-              value={inputRef.current}
+              value={textRef}
               ref={inputRef}
               onChangeText={setTextRef}
               textAlignVertical="center"
               numberOfLines={1}
+              autoFocus={true}
             />
             <TouchableOpacity
               onPress={handleSendMessage}

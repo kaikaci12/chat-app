@@ -1,150 +1,134 @@
 import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { getRoomId } from "@/utils/common";
+import {
+  doc,
+  onSnapshot,
+  collection,
+  query,
+  orderBy,
+} from "firebase/firestore";
+import { db } from "@/firebaseConfig";
 
-const ChatItem = ({ item }: any) => {
+const ChatItem = ({ item, currentUser }: any) => {
   const username = item.username || "Unknown User";
-  const lastMessage = item.lastMessage || "No message yet";
-
-  const lastMessageTime = item.lastMessageTime || "Just now";
   const router = useRouter();
+
+  const [lastMessage, setLastMessage] = useState<any | null>(null);
+
   const openChatRoom = () => {
     router.push({ pathname: "/chatRoom", params: item });
+  };
+
+  useEffect(() => {
+    const roomId = getRoomId(currentUser?.userId, item?.userId);
+    const q = query(
+      collection(doc(db, "rooms", roomId), "messages"),
+      orderBy("createdAt", "desc")
+    );
+
+    const unsub = onSnapshot(q, (snap) => {
+      const allMessages = snap.docs.map((d) => d.data());
+      setLastMessage(allMessages?.[0] || null);
+    });
+
+    return unsub;
+  }, []);
+  const renderLastMessage = () => {
+    if (typeof lastMessage === "undefined") {
+      return "Loading...";
+    }
+    if (lastMessage) {
+      if (currentUser?.userId == lastMessage.userId) {
+        return `You: ${lastMessage?.text}`;
+      }
+      return lastMessage?.text;
+    } else {
+      return "Say Hi 👋";
+    }
+  };
+  const renderTime = () => {
+    if (lastMessage) {
+      const date = new Date(lastMessage?.createdAt?.seconds * 1000);
+      return `${date.getHours()}:${date.getMinutes()}`;
+    } else {
+      return "Time";
+    }
   };
   return (
     <TouchableOpacity
       onPress={openChatRoom}
       style={styles.container}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
     >
-      {/* Avatar Section */}
-      <View style={styles.avatarContainer}>
+      <View style={styles.row}>
         <Image
           style={styles.avatar}
           source={{ uri: item.profileUrl }}
           placeholder={require("../assets/images/placeholder.png")}
           contentFit="cover"
         />
-        {item?.isOnline && <View style={styles.onlineIndicator} />}
-      </View>
+        <View style={styles.textContainer}>
+          <View style={styles.topRow}>
+            <Text style={styles.username}>{username}</Text>
+          </View>
 
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.username} numberOfLines={1}>
-            {username}
-          </Text>
-          <Text style={styles.time}>{lastMessageTime}</Text>
-        </View>
-
-        <View style={styles.messagePreview}>
-          <Ionicons
-            name={item.unreadCount ? "checkmark-done" : "checkmark"}
-            size={14}
-            color={item.unreadCount ? "#1B9C6E" : "#A0D6B4"}
-            style={styles.icon}
-          />
-          <Text
-            numberOfLines={1}
-            style={[
-              styles.messageText,
-              item.unreadCount && styles.unreadMessage,
-            ]}
-          >
-            {lastMessage}
+          <Text style={styles.preview} numberOfLines={1}>
+            {renderLastMessage()}
           </Text>
         </View>
       </View>
-
-      {/* Unread badge */}
-      {item.unreadCount > 0 && (
-        <View style={styles.unreadBadge}>
-          <Text style={styles.unreadCount}>{item.unreadCount}</Text>
-        </View>
-      )}
+      <Text style={styles.time} numberOfLines={1}>
+        {renderTime()}
+      </Text>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
-    alignItems: "center",
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#C8E6C9",
+    borderBottomColor: "#e0f2f1",
+    backgroundColor: "#fff",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
-  avatarContainer: {
-    position: "relative",
-    marginRight: 16,
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   avatar: {
     width: 56,
     height: 56,
     borderRadius: 28,
+    marginRight: 14,
   },
-  onlineIndicator: {
-    position: "absolute",
-    bottom: 2,
-    right: 2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: "#66BB6A",
-    borderWidth: 2,
-    borderColor: "#E8F5E9",
+  textContainer: {
+    justifyContent: "center",
   },
-  content: {
-    alignContent: "flex-start",
-  },
-  header: {
+  topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
     marginBottom: 4,
   },
   username: {
-    fontWeight: "600",
     fontSize: 16,
+    fontWeight: "600",
     color: "#1B5E20",
-    maxWidth: "70%", // Prevent overflow
   },
   time: {
-    color: "#81C784",
     fontSize: 12,
+    color: "#999",
+    marginLeft: 10,
   },
-  messagePreview: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  icon: {
-    marginRight: 6,
-  },
-  messageText: {
-    flex: 1,
+  preview: {
     fontSize: 14,
-    color: "#4CAF50",
-  },
-  unreadMessage: {
-    color: "#2E7D32",
-    fontWeight: "500",
-  },
-  unreadBadge: {
-    backgroundColor: "#43A047",
-    borderRadius: 12,
-    minWidth: 22,
-    height: 22,
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 8,
-    paddingHorizontal: 6,
-  },
-  unreadCount: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
+    color: "#555",
   },
 });
 
