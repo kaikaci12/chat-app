@@ -17,14 +17,14 @@ import {
 } from "react-native-popup-menu";
 
 const ios = Platform.OS === "ios";
-
+import { useRouter } from "expo-router";
 const HomeHeader = () => {
   const { top } = useSafeAreaInsets();
   const { user, logout } = useAuth();
   const handleLogout = async () => {
     await logout();
   };
-
+  const router = useRouter();
   return (
     <View style={[styles.container, { paddingTop: ios ? top : top + 10 }]}>
       <View style={styles.content}>
@@ -43,7 +43,7 @@ const HomeHeader = () => {
             </MenuTrigger>
             <MenuOptions customStyles={optionsStyles}>
               {/* Profile Menu Item */}
-              <MenuOption onSelect={() => alert("View Profile")}>
+              <MenuOption onSelect={() => router.push("/profile")}>
                 <View style={styles.menuItem}>
                   <View style={styles.menuIconContainer}>
                     <Feather name="user" size={20} color="#25D366" />

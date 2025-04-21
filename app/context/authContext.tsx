@@ -30,6 +30,7 @@ interface AuthContextType {
     username: string,
     profileUrl: string
   ) => Promise<{ success: boolean; data?: any; msg?: string }>;
+  updateUserData: (userId: string) => Promise<void>;
 }
 
 // Initialize AuthContext with default values
@@ -39,6 +40,7 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => ({ success: false, msg: "" }),
   logout: async () => ({ success: false }),
   register: async () => ({ success: false }),
+  updateUserData: async () => {},
 });
 
 interface AuthProviderProps {
@@ -169,7 +171,14 @@ const AuthContextProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const value = { user, isAuthenticated, login, logout, register };
+  const value = {
+    user,
+    isAuthenticated,
+    login,
+    logout,
+    register,
+    updateUserData,
+  };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
