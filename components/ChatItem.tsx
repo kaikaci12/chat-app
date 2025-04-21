@@ -52,9 +52,11 @@ const ChatItem = ({ item, currentUser }: any) => {
   const renderTime = () => {
     if (lastMessage) {
       const date = new Date(lastMessage?.createdAt?.seconds * 1000);
-      return `${date.getHours()}:${date.getMinutes()}`;
-    } else {
-      return "Time";
+      const day = date.getDate();
+      const month = date.toLocaleString("default", { month: "short" });
+      const hours = date.getHours();
+      const minutes = date.getMinutes().toString().padStart(2, "0");
+      return `${day} ${month}, ${hours}:${minutes}`;
     }
   };
   return (
@@ -74,9 +76,10 @@ const ChatItem = ({ item, currentUser }: any) => {
           <View style={styles.topRow}>
             <Text style={styles.username}>{username}</Text>
           </View>
-
           <Text style={styles.preview} numberOfLines={1}>
-            {renderLastMessage()}
+            {renderLastMessage()?.length > 20
+              ? `${renderLastMessage().substring(0, 30)}...`
+              : renderLastMessage()}
           </Text>
         </View>
       </View>

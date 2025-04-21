@@ -5,7 +5,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 const MessageItem = ({ message, currentUser }: any) => {
-  if (currentUser.userId === message.userId) {
+  if (currentUser?.userId === message?.userId) {
     //my message
     return (
       <View style={styles.myMessage}>

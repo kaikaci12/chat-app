@@ -8,7 +8,9 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-const ChatRoomHeader = ({ user, router }: any) => {
+import { useRouter } from "expo-router";
+const ChatRoomHeader = ({ user }: any) => {
+  const router = useRouter();
   return (
     <Stack.Screen
       options={{
@@ -18,7 +20,12 @@ const ChatRoomHeader = ({ user, router }: any) => {
           return (
             <View style={styles.headerLeft}>
               <TouchableOpacity onPress={() => router.back()}>
-                <Ionicons name="arrow-back" size={24} color="green" />
+                <Ionicons
+                  style={{ width: "100%" }}
+                  name="arrow-back"
+                  size={30}
+                  color="green"
+                />
               </TouchableOpacity>
               <View style={styles.profile}>
                 <Image

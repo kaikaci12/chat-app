@@ -29,6 +29,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
+import { Keyboard } from "react-native";
 import { onSnapshot } from "firebase/firestore";
 const ChatRoom = () => {
   const item = useLocalSearchParams(); //user who is chatting with
@@ -50,7 +51,14 @@ const ChatRoom = () => {
       });
       setMessages([...allMessages]);
     });
-    return unsub;
+    const keyBoardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      updateScrollView
+    );
+    return () => {
+      keyBoardDidShowListener.remove();
+      unsub(); // Unsubscribe from the snapshot listener when the component unmounts
+    };
   }, []);
   const createRoomIfNotExists = async () => {
     if (user?.userId) {
@@ -67,7 +75,7 @@ const ChatRoom = () => {
   const updateScrollView = () => {
     setTimeout(() => {
       scrollViewRef.current.scrollToEnd({ animated: true });
-    }, 1000);
+    }, 100);
   };
 
   const handleSendMessage = async () => {
