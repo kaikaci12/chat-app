@@ -18,20 +18,22 @@ import { usersRef } from "@/firebaseConfig";
 const Home = () => {
   const { user, logout } = useAuth();
   const [users, setUsers] = useState([]);
+
   const getUser = async () => {
-    const q = query(usersRef, where("userId", "!=", user?.uid));
+    const q = query(usersRef, where("userId", "!=", user?.userId));
     const querySnapshot = await getDocs(q);
     let data: any = [];
     querySnapshot.forEach((doc) => {
       data.push({ ...doc.data() });
     });
     setUsers(data);
+    console.log("users", users);
   };
   useEffect(() => {
-    if (user?.uid) {
+    if (user?.userId) {
       getUser();
     }
-  }, []);
+  }, [user.userId]);
   return (
     <View style={styles.container}>
       <StatusBar style="light" />

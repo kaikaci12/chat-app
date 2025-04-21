@@ -3,8 +3,6 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
-  setPersistence,
-  browserLocalPersistence,
 } from "firebase/auth";
 import {
   createContext,

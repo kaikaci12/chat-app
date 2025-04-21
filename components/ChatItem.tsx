@@ -19,6 +19,7 @@ const ChatItem = ({ item }: any) => {
       style={styles.container}
       activeOpacity={0.8}
     >
+      {/* Avatar Section */}
       <View style={styles.avatarContainer}>
         <Image
           style={styles.avatar}
@@ -29,7 +30,6 @@ const ChatItem = ({ item }: any) => {
         {item?.isOnline && <View style={styles.onlineIndicator} />}
       </View>
 
-      {/* Chat content */}
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.username} numberOfLines={1}>
@@ -57,7 +57,7 @@ const ChatItem = ({ item }: any) => {
         </View>
       </View>
 
-      {/* Unread count badge */}
+      {/* Unread badge */}
       {item.unreadCount > 0 && (
         <View style={styles.unreadBadge}>
           <Text style={styles.unreadCount}>{item.unreadCount}</Text>
@@ -73,7 +73,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 14,
     paddingHorizontal: 16,
-
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#C8E6C9",
   },
@@ -98,8 +97,7 @@ const styles = StyleSheet.create({
     borderColor: "#E8F5E9",
   },
   content: {
-    flex: 1,
-    justifyContent: "center",
+    alignContent: "flex-start",
   },
   header: {
     flexDirection: "row",
@@ -111,7 +109,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 16,
     color: "#1B5E20",
-    maxWidth: "70%",
+    maxWidth: "70%", // Prevent overflow
   },
   time: {
     color: "#81C784",
