@@ -13,7 +13,6 @@ import {
 } from "react";
 import { auth, db } from "@/firebaseConfig";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Define context types
 interface AuthContextType {
@@ -31,6 +30,7 @@ interface AuthContextType {
     profileUrl: string
   ) => Promise<{ success: boolean; data?: any; msg?: string }>;
   updateUserData: (userId: string) => Promise<void>;
+  updateUserProfile: (profileUrl: string, userId: string) => Promise<void>;
 }
 
 // Initialize AuthContext with default values
@@ -41,6 +41,7 @@ const AuthContext = createContext<AuthContextType>({
   logout: async () => ({ success: false }),
   register: async () => ({ success: false }),
   updateUserData: async () => {},
+  updateUserProfile: async () => {},
 });
 
 interface AuthProviderProps {
@@ -54,37 +55,13 @@ const AuthContextProvider = ({ children }: AuthProviderProps) => {
   );
 
   useEffect(() => {
-    // Check AsyncStorage for persisted user data on app startup
-    const loadUser = async () => {
-      const savedUser = await AsyncStorage.getItem("@user");
-      if (savedUser) {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
-        setIsAuthenticated(true);
-
-        // Manually set the Firebase Auth state
-        const currentUser = await signInWithEmailAndPassword(
-          auth,
-          parsedUser.email,
-          parsedUser.password
-        );
-        setUser(currentUser.user);
-      } else {
-        setIsAuthenticated(false);
-      }
-    };
-
-    loadUser(); // Load user data from AsyncStorage
-
     // Firebase auth state listener (for real-time updates)
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        await AsyncStorage.setItem("@user", JSON.stringify(user)); // Save user to AsyncStorage
         setUser(user);
         setIsAuthenticated(true);
         updateUserData(user.uid); // Update user profile data if needed
       } else {
-        await AsyncStorage.removeItem("@user"); // Remove user from AsyncStorage on sign out
         setUser(null);
         setIsAuthenticated(false);
       }
@@ -107,12 +84,24 @@ const AuthContextProvider = ({ children }: AuthProviderProps) => {
       });
     }
   };
-
+  const updateUserProfile = async (profileUrl: string, userId: string) => {
+    const docRef = doc(db, "users", userId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      let data = docSnap.data();
+      setUser({
+        ...user,
+        username: data.username,
+        profileUrl: profileUrl,
+        userId: data.userId,
+      });
+    }
+  };
   // Login function with AsyncStorage persistence
   const login = async (email: string, password: string) => {
     try {
       const response = await signInWithEmailAndPassword(auth, email, password);
-      await AsyncStorage.setItem("@user", JSON.stringify(response.user)); // Save user to AsyncStorage
+
       setUser(response.user);
       setIsAuthenticated(true);
       return { success: true, msg: "" };
@@ -121,6 +110,8 @@ const AuthContextProvider = ({ children }: AuthProviderProps) => {
       if (msg.includes("(auth/invalid-email)")) msg = "Invalid email address";
       if (msg.includes("(auth/user-not-found)")) msg = "User not found";
       if (msg.includes("(auth/wrong-password)")) msg = "Wrong password";
+      if (msg.includes("(auth/invalid-credential)"))
+        msg = "Wrong Email or Password";
       return { success: false, msg: msg || "" };
     }
   };
@@ -129,7 +120,7 @@ const AuthContextProvider = ({ children }: AuthProviderProps) => {
   const logout = async () => {
     try {
       await signOut(auth);
-      await AsyncStorage.removeItem("@user"); // Remove user data from AsyncStorage
+
       setUser(null);
       setIsAuthenticated(false);
       return { success: true };
@@ -158,9 +149,10 @@ const AuthContextProvider = ({ children }: AuthProviderProps) => {
         userId: response.user.uid,
       });
 
-      await AsyncStorage.setItem("@user", JSON.stringify(response.user)); // Save user to AsyncStorage
       setUser(response.user);
+      updateUserData(response.user.uid); // Update user data in state
       setIsAuthenticated(true);
+
       return { success: true, data: response.user };
     } catch (error: any) {
       let msg = error.message;
@@ -178,6 +170,7 @@ const AuthContextProvider = ({ children }: AuthProviderProps) => {
     logout,
     register,
     updateUserData,
+    updateUserProfile,
   };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

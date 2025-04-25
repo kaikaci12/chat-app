@@ -36,7 +36,8 @@ const HomeHeader = () => {
               <Image
                 style={styles.avatar}
                 source={{ uri: user?.profileUrl }}
-                placeholder={{ blurhash }}
+                placeholder={require("../assets/images/placeholder.png")}
+                alt="profile"
                 contentFit="cover"
                 transition={500}
               />

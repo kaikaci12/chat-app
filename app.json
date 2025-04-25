@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "social-media-app",
+    "name": "Pashkura",
     "slug": "social-media-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -21,9 +21,10 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.tato001.socialmediaapp"
     },
     "web": {
       "bundler": "metro",
@@ -33,6 +34,14 @@
     "plugins": ["expo-router"],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "409ed930-cd8d-4e5c-8431-00c6fa795de3"
+      }
     }
   }
 }

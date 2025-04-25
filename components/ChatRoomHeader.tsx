@@ -8,9 +8,11 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 const ChatRoomHeader = ({ user }: any) => {
-  const router = useRouter();
+  const navigation = useNavigation();
+
   return (
     <Stack.Screen
       options={{
@@ -19,18 +21,19 @@ const ChatRoomHeader = ({ user }: any) => {
         headerLeft: () => {
           return (
             <View style={styles.headerLeft}>
-              <TouchableOpacity onPress={() => router.back()}>
-                <Ionicons
-                  style={{ width: "100%" }}
-                  name="arrow-back"
-                  size={30}
-                  color="green"
-                />
+              <TouchableOpacity onPress={() => navigation.goBack()}>
+                <Ionicons name="arrow-back" size={30} color="green" />
               </TouchableOpacity>
               <View style={styles.profile}>
                 <Image
-                  source={user?.profileUrl}
-                  style={{ height: hp(4.5), aspectRatio: 1, borderRadius: 100 }}
+                  style={{
+                    width: wp(10),
+                    height: wp(10),
+                    borderRadius: 50,
+                  }}
+                  source={{ uri: user.profileUrl }}
+                  placeholder={require("../assets/images/placeholder.png")}
+                  contentFit="cover"
                 />
               </View>
               <Text

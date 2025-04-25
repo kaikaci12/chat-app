@@ -2,12 +2,11 @@ import {
   StyleSheet,
   Text,
   View,
-  Image,
   TouchableOpacity,
   Alert,
   ActivityIndicator,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/authContext";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,20 +16,28 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
+import { Image } from "expo-image";
 
 const Profile = () => {
-  const { user, updateUserData } = useAuth();
+  const { user, updateUserProfile } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [image, setImage] = useState<string>(user.profileUrl);
+  const [newUsername, setNewUsername] = useState<string | undefined>(
+    user.username || undefined
+  );
 
   const handleUpdateProfile = async (newProfileUrl: string) => {
     try {
       setLoading(true);
       await updateDoc(doc(db, "users", user.userId), {
         profileUrl: newProfileUrl,
+        username: newUsername, // Update username as well
       });
-      await updateUserData({ ...user, profileUrl: newProfileUrl });
-    } catch (error) {
-      Alert.alert("Error", "Failed to update profile picture");
+      await updateUserProfile(newProfileUrl, user.userId);
+      setImage(newProfileUrl);
+      Alert.alert("Success", "Profile updated successfully");
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to update profile");
     } finally {
       setLoading(false);
     }
@@ -55,6 +62,11 @@ const Profile = () => {
     }
   };
 
+  const handleSaveChanges = () => {
+    if (loading) return; // Prevent saving if loading
+    handleUpdateProfile(image); // Call the function to save profile
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.profileContainer}>
@@ -62,8 +74,9 @@ const Profile = () => {
         <View style={styles.avatarContainer}>
           <Image
             source={{
-              uri: user?.profileUrl || "../../assets/images/placeholder.png",
+              uri: image,
             }}
+            placeholder={require("../../assets/images/placeholder.png")}
             style={styles.avatar}
           />
           <TouchableOpacity
@@ -86,7 +99,19 @@ const Profile = () => {
             />
             <View>
               <Text style={styles.label}>Username</Text>
-              <Text style={styles.value}>{user?.username || "Not set"}</Text>
+              <Text
+                style={styles.value}
+                onPress={() => {
+                  // Allow user to update the username
+                  const updatedUsername = prompt(
+                    "Enter new username:",
+                    newUsername || ""
+                  );
+                  if (updatedUsername !== null) setNewUsername(updatedUsername);
+                }}
+              >
+                {newUsername || "Not set"}
+              </Text>
             </View>
           </View>
 
@@ -97,6 +122,15 @@ const Profile = () => {
             </View>
           )}
         </View>
+
+        {/* Save Changes Button */}
+        <TouchableOpacity
+          style={[styles.saveButton, loading && { backgroundColor: "#ccc" }]}
+          onPress={handleSaveChanges}
+          disabled={loading}
+        >
+          <Text style={styles.saveButtonText}>Save Changes</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -177,5 +211,18 @@ const styles = StyleSheet.create({
     marginLeft: wp(2),
     color: "#666",
     fontSize: hp(1.8),
+  },
+  saveButton: {
+    marginTop: hp(3),
+    backgroundColor: "#4CAF50",
+    paddingVertical: hp(1.5),
+    borderRadius: hp(2),
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  saveButtonText: {
+    fontSize: hp(2),
+    color: "#fff",
+    fontWeight: "600",
   },
 });

@@ -5,3 +5,4 @@ export const getRoomId = (userId1: string, userId2: string) => {
   const roomId = sortedIds.join("-");
   return roomId;
 };
+getRoomId("user1", "user2"); // "user1-user2"

@@ -2,46 +2,76 @@ import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { getRoomId } from "@/utils/common";
+
 import {
   doc,
   onSnapshot,
   collection,
   query,
   orderBy,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 
 const ChatItem = ({ item, currentUser }: any) => {
-  const username = item.username || "Unknown User";
   const router = useRouter();
-
   const [lastMessage, setLastMessage] = useState<any | null>(null);
+  const [otherUser, setOtherUser] = useState<any | null>(null); // For private chat
+
+  // Determine if this is a group or private chat
+  const isGroupChat = item.type === "group";
+  const roomId = item.roomId; // Since we're using chatRooms collection, item.roomId is directly available
 
   const openChatRoom = () => {
     router.push({ pathname: "/chatRoom", params: item });
   };
 
+  // Get the other user's data for private chat
+  const getOtherUser = async () => {
+    if (item?.members?.length === 2) {
+      const otherUserId = item?.members.find(
+        (userId: string) => userId !== currentUser?.userId
+      );
+      if (otherUserId) {
+        const userRef = doc(db, "users", otherUserId);
+        const userSnapshot = await getDoc(userRef);
+        setOtherUser(userSnapshot.data());
+      }
+    }
+  };
+
+  // Fetch the last message
   useEffect(() => {
-    const roomId = getRoomId(currentUser?.userId, item?.userId);
-    const q = query(
-      collection(doc(db, "rooms", roomId), "messages"),
-      orderBy("createdAt", "desc")
-    );
-
-    const unsub = onSnapshot(q, (snap) => {
-      const allMessages = snap.docs.map((d) => d.data());
-      setLastMessage(allMessages?.[0] || null);
-    });
-
-    return unsub;
+    if (isGroupChat) {
+      const q = query(
+        collection(doc(db, "chatRooms", roomId), "messages"),
+        orderBy("createdAt", "desc")
+      );
+      const unsub = onSnapshot(q, (snap) => {
+        const allMessages = snap.docs.map((d) => d.data());
+        setLastMessage(allMessages?.[0] || null);
+      });
+      return unsub;
+    } else {
+      getOtherUser(); // For private chat, fetch other user info
+      const q = query(
+        collection(doc(db, "chatRooms", roomId), "messages"),
+        orderBy("createdAt", "desc")
+      );
+      const unsub = onSnapshot(q, (snap) => {
+        const allMessages = snap.docs.map((d) => d.data());
+        setLastMessage(allMessages?.[0] || null);
+      });
+      return unsub;
+    }
   }, []);
+
   const renderLastMessage = () => {
     if (typeof lastMessage === "undefined") {
       return "Loading...";
     }
     if (lastMessage) {
-      if (currentUser?.userId == lastMessage.userId) {
+      if (currentUser?.userId === lastMessage.userId) {
         return `You: ${lastMessage?.text}`;
       }
       return lastMessage?.text;
@@ -49,6 +79,7 @@ const ChatItem = ({ item, currentUser }: any) => {
       return "Say Hi 👋";
     }
   };
+
   const renderTime = () => {
     if (lastMessage) {
       const date = new Date(lastMessage?.createdAt?.seconds * 1000);
@@ -59,6 +90,7 @@ const ChatItem = ({ item, currentUser }: any) => {
       return `${day} ${month}, ${hours}:${minutes}`;
     }
   };
+
   return (
     <TouchableOpacity
       onPress={openChatRoom}
@@ -66,15 +98,23 @@ const ChatItem = ({ item, currentUser }: any) => {
       activeOpacity={0.85}
     >
       <View style={styles.row}>
+        {/* Render Avatar */}
         <Image
           style={styles.avatar}
-          source={{ uri: item.profileUrl }}
+          source={{
+            uri: isGroupChat
+              ? item.groupImage || "default_group_image_url" // Default group image if none
+              : otherUser?.profileUrl, // Private chat: use the other user's profile
+          }}
           placeholder={require("../assets/images/placeholder.png")}
           contentFit="cover"
         />
         <View style={styles.textContainer}>
           <View style={styles.topRow}>
-            <Text style={styles.username}>{username}</Text>
+            {/* Render Username */}
+            <Text style={styles.username}>
+              {isGroupChat ? item.name : otherUser?.username || "Unknown User"}
+            </Text>
           </View>
           <Text style={styles.preview} numberOfLines={1}>
             {renderLastMessage()?.length > 20
