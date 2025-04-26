@@ -9,7 +9,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { useNavigation } from "@react-navigation/native";
-import { useRouter } from "expo-router";
+
 const ChatRoomHeader = ({ user }: any) => {
   const navigation = useNavigation();
 
@@ -25,32 +25,26 @@ const ChatRoomHeader = ({ user }: any) => {
                 <Ionicons name="arrow-back" size={30} color="green" />
               </TouchableOpacity>
               <View style={styles.profile}>
-                <Image
-                  style={{
-                    width: wp(10),
-                    height: wp(10),
-                    borderRadius: 50,
-                  }}
-                  source={{ uri: user.profileUrl }}
-                  placeholder={require("../assets/images/placeholder.png")}
-                  contentFit="cover"
-                />
+                {user?.profileUrl ? (
+                  <Image
+                    style={styles.profileImage}
+                    source={{ uri: user.profileUrl }}
+                    placeholder={require("../assets/images/placeholder.png")}
+                    contentFit="cover"
+                  />
+                ) : (
+                  <Ionicons name="person-circle" size={wp(10)} color="gray" />
+                )}
               </View>
-              <Text
-                style={{
-                  fontSize: hp(2.5),
-                  fontWeight: "medium",
-                  color: "#1B5E20",
-                }}
-              >
-                {user?.username}
+              <Text style={styles.username}>
+                {user?.username || "Unknown User"}
               </Text>
             </View>
           );
         },
         headerRight: () => {
           return (
-            <View style={{ flexDirection: "row", gap: 15 }}>
+            <View style={styles.headerRight}>
               <TouchableOpacity
                 onPress={() => console.log("Call icon pressed")}
               >
@@ -74,13 +68,27 @@ export default ChatRoomHeader;
 const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: "row",
-    gap: 10,
-    justifyContent: "center",
     alignItems: "center",
+    gap: 10,
   },
   profile: {
     flexDirection: "row",
     gap: 4,
+    alignItems: "center",
+  },
+  profileImage: {
+    width: wp(10),
+    height: wp(10),
+    borderRadius: 50,
+  },
+  username: {
+    fontSize: hp(2.5),
+    fontWeight: "500",
+    color: "#1B5E20",
+  },
+  headerRight: {
+    flexDirection: "row",
+    gap: 15,
     alignItems: "center",
   },
 });

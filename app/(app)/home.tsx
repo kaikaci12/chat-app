@@ -20,6 +20,8 @@ import { collection, getDocs, query, setDoc, where } from "firebase/firestore";
 import { db, usersRef } from "@/firebaseConfig";
 import { Ionicons } from "@expo/vector-icons";
 import uuid from "react-native-uuid";
+import { useRouter } from "expo-router";
+import { ChatRoomType } from "../types";
 
 const Home = () => {
   const { user } = useAuth();
@@ -27,12 +29,14 @@ const Home = () => {
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [chatRooms, setChatRooms] = useState<any[]>([]);
+  const [chatRooms, setChatRooms] = useState<ChatRoomType[]>([]);
+
   const [contactModalVisible, setContactModalVisible] = useState(false);
   const [groupModalVisible, setGroupModalVisible] = useState(false);
   const [selectedGroupUsers, setSelectedGroupUsers] = useState<any[]>([]);
   const [groupName, setGroupName] = useState("");
   const [groupImage, setGroupImage] = useState("");
+  const router = useRouter();
 
   // Fetch Users
   const getUsers = async () => {
@@ -172,7 +176,9 @@ const Home = () => {
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={styles.userItem}
-                onPress={() => createPrivateRoom(item)}
+                onPress={() =>
+                  router.push({ pathname: "/chatRoom", params: item })
+                }
               >
                 <Text>{item.username}</Text>
               </TouchableOpacity>
