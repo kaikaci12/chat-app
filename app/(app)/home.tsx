@@ -16,17 +16,26 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
-import { collection, getDocs, query, setDoc, where } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDocs,
+  query,
+  setDoc,
+  where,
+} from "firebase/firestore";
 import { db, usersRef } from "@/firebaseConfig";
 import { Ionicons } from "@expo/vector-icons";
 import uuid from "react-native-uuid";
 import { useRouter } from "expo-router";
-import { ChatRoomType } from "../types";
+import { ChatRoomType, UserType } from "../types";
+import UserUI from "@/components/UserUI";
+import ContactModal from "@/components/ContactModal";
 
 const Home = () => {
   const { user } = useAuth();
-  const [users, setUsers] = useState<any[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [chatRooms, setChatRooms] = useState<ChatRoomType[]>([]);
@@ -49,7 +58,6 @@ const Home = () => {
         data.push({ ...doc.data() });
       });
       setUsers(data);
-      setFilteredUsers(data);
     } catch (error) {
       console.error("Error fetching users:", error);
     } finally {
@@ -57,7 +65,6 @@ const Home = () => {
     }
   };
 
-  // Fetch Chat Rooms where the current user is a member
   const getChatRooms = async () => {
     try {
       setLoading(true);
@@ -76,23 +83,6 @@ const Home = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Create Private Room
-  const createPrivateRoom = async (otherUser: any) => {
-    const members = [user.userId, otherUser.userId].sort();
-    const roomId = `${members[0]}_${members[1]}`;
-    const roomRef = doc(db, "chatRooms", roomId);
-
-    await setDoc(roomRef, {
-      roomId,
-      type: "private",
-      members,
-      createdAt: new Date(),
-    });
-
-    setContactModalVisible(false);
-    getChatRooms(); // Fetch updated chat rooms
   };
 
   const createGroupRoom = async () => {
@@ -159,33 +149,12 @@ const Home = () => {
       ) : (
         <ChatList currentUser={user} chatRooms={chatRooms} /> // Pass chatRooms to ChatList
       )}
-
-      {/* Contact Modal */}
-      <Modal visible={contactModalVisible} animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Start a Chat</Text>
-            <TouchableOpacity onPress={() => setContactModalVisible(false)}>
-              <Ionicons name="close" size={28} color="red" />
-            </TouchableOpacity>
-          </View>
-
-          <FlatList
-            data={users}
-            keyExtractor={(item) => item.userId}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.userItem}
-                onPress={() =>
-                  router.push({ pathname: "/chatRoom", params: item })
-                }
-              >
-                <Text>{item.username}</Text>
-              </TouchableOpacity>
-            )}
-          />
-        </View>
-      </Modal>
+      <ContactModal
+        currentUser={user}
+        contactModalVisible={contactModalVisible}
+        setContactModalVisible={setContactModalVisible}
+        users={users}
+      />
 
       {/* Group Modal */}
       <Modal visible={groupModalVisible} animationType="slide">

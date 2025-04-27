@@ -14,5 +14,9 @@ export type GroupChatRoom = BaseChatRoom & {
   groupImage: string;
   createdBy: string;
 };
-
+export type UserType = {
+  userId: string;
+  username: string;
+  profileUrl: string;
+};
 export type ChatRoomType = PrivateChatRoom | GroupChatRoom;
