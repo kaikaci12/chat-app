@@ -11,7 +11,7 @@ const ChatList = ({ chatRooms, currentUser }: any) => {
           data={chatRooms}
           keyExtractor={(item) => item.roomId}
           renderItem={({ item }) => (
-            <ChatItem currentUser={currentUser} item={item} />
+            <ChatItem key={item.roomId} currentUser={currentUser} item={item} />
           )}
           showsVerticalScrollIndicator={false}
         />

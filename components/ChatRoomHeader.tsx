@@ -9,8 +9,18 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { useNavigation } from "@react-navigation/native";
-
-const ChatRoomHeader = ({ user }: any) => {
+interface ChatRoomHeaderProps {
+  item: any;
+  isGroupChat: boolean;
+  groupImage: string | string[];
+  chatRoomName: string | string[];
+}
+const ChatRoomHeader = ({
+  item,
+  chatRoomName,
+  groupImage,
+  isGroupChat,
+}: ChatRoomHeaderProps) => {
   const navigation = useNavigation();
 
   return (
@@ -25,10 +35,10 @@ const ChatRoomHeader = ({ user }: any) => {
                 <Ionicons name="arrow-back" size={30} color="green" />
               </TouchableOpacity>
               <View style={styles.profile}>
-                {user?.profileUrl ? (
+                {groupImage ? (
                   <Image
                     style={styles.profileImage}
-                    source={{ uri: user.profileUrl }}
+                    source={{ uri: groupImage }}
                     placeholder={require("../assets/images/placeholder.png")}
                     contentFit="cover"
                   />
@@ -36,9 +46,7 @@ const ChatRoomHeader = ({ user }: any) => {
                   <Ionicons name="person-circle" size={wp(10)} color="gray" />
                 )}
               </View>
-              <Text style={styles.username}>
-                {user?.username || "Unknown User"}
-              </Text>
+              <Text style={styles.username}>{chatRoomName}</Text>
             </View>
           );
         },

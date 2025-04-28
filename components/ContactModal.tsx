@@ -47,6 +47,7 @@ const ContactModal = ({
     setFilteredUsers(users);
   }, [users]);
   const handleContactPress = (user: UserType) => {
+    console.log("clicked on contact");
     const chatRoomId = getRoomId(currentUser.userId, user.userId);
     router.push({
       pathname: "/chatRoom",
@@ -84,7 +85,7 @@ const ContactModal = ({
           keyExtractor={(item) => item.userId}
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={styles.userItem}
+              key={item.userId}
               onPress={() => handleContactPress(item)}
             >
               <UserUI item={item} />
@@ -114,11 +115,7 @@ const styles = StyleSheet.create({
     fontSize: hp(2.5),
     fontWeight: "bold",
   },
-  userItem: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderColor: "#ddd",
-  },
+
   selectedUser: {
     backgroundColor: "#d0f0c0",
   },

@@ -1,7 +1,11 @@
+import { Timestamp } from "firebase/firestore";
 type BaseChatRoom = {
-  roomId: string;
+  chatRoomId: string;
   members: string[];
-  createdAt: Date;
+  createdAt: Timestamp;
+  imageUrl: string;
+  name: string;
+  createdBy: string;
 };
 
 export type PrivateChatRoom = BaseChatRoom & {
@@ -10,13 +14,17 @@ export type PrivateChatRoom = BaseChatRoom & {
 
 export type GroupChatRoom = BaseChatRoom & {
   type: "group";
-  name: string;
-  groupImage: string;
-  createdBy: string;
 };
 export type UserType = {
   userId: string;
   username: string;
   profileUrl: string;
+};
+export type MessageType = {
+  createdAt: Timestamp;
+  profileUrl: string;
+  senderName: string;
+  text: string;
+  userId: string;
 };
 export type ChatRoomType = PrivateChatRoom | GroupChatRoom;

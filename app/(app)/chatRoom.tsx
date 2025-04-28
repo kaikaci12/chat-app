@@ -71,7 +71,6 @@ const ChatRoom = () => {
       "keyboardDidShow",
       updateScrollView
     );
-
     return () => {
       unsub();
       keyBoardDidShowListener.remove();
@@ -82,22 +81,35 @@ const ChatRoom = () => {
     if (!user?.userId || !chatRoomId) return;
 
     const docRef = doc(db, "chatRooms", chatRoomId);
-    const docSnap = await getDoc(docRef);
 
-    if (!docSnap.exists()) {
-      const participants = isGroupChat
-        ? item.members
-        : [user.userId, item.userId];
+    try {
+      const docSnap = await getDoc(docRef);
 
-      await setDoc(docRef, {
-        chatRoomId,
-        createdAt: Timestamp.fromDate(new Date()),
-        createdBy: user.userId,
-        members: participants,
-        name: isGroupChat ? item.name : `${item.username}`,
-        type: item.type,
-        groupImage: isGroupChat ? item.groupImage : "",
-      });
+      if (!docSnap.exists()) {
+        const chatRoomData: any = {
+          chatRoomId,
+          createdAt: Timestamp.fromDate(new Date()),
+
+          type: item.type,
+        };
+
+        if (isGroupChat) {
+          chatRoomData.members = item.members;
+          chatRoomData.name = item.groupName;
+          chatRoomData.imageUrl = item.groupImage;
+          chatRoomData.createdBy = item.userId;
+        } else {
+          chatRoomData.members = [user.userId, item.userId];
+          chatRoomData.name = item.username;
+          chatRoomData.imageUrl = item.profileUrl;
+        }
+
+        await setDoc(docRef, chatRoomData);
+        console.log("Chat room created successfully");
+      }
+    } catch (error) {
+      console.error("Error creating chat room:", error);
+      Alert.alert("Error", "Failed to create chat room");
     }
   };
 
@@ -144,11 +156,10 @@ const ChatRoom = () => {
     <View style={styles.container}>
       <StatusBar style="dark" />
       <ChatRoomHeader
-        user={item}
-        router={router}
+        item={item}
         isGroupChat={isGroupChat}
-        groupImage={item?.groupImage}
-        chatRoomName={item?.name}
+        chatRoomName={item.name}
+        groupImage={item.imageUrl}
       />
       <View style={styles.headerBottom} />
 

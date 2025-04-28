@@ -12,69 +12,58 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
-
-const ChatItem = ({ item, currentUser }: any) => {
+import { ChatRoomType, UserType } from "@/app/types";
+interface ChatItemProps {
+  item: ChatRoomType;
+  currentUser: UserType;
+}
+const ChatItem = ({ item, currentUser }: ChatItemProps) => {
+  console.log("item: ", item);
   const router = useRouter();
   const [lastMessage, setLastMessage] = useState<any | null>(null);
-  const [otherUser, setOtherUser] = useState<any | null>(null); // For private chat
 
-  // Determine if this is a group or private chat
   const isGroupChat = item.type === "group";
-  const roomId = item.roomId; // Since we're using chatRooms collection, item.roomId is directly available
 
   const openChatRoom = () => {
-    router.push({ pathname: "/chatRoom", params: item });
+    router.push({
+      pathname: "/chatRoom",
+      params: {
+        chatRoomId: item.chatRoomId,
+        name: item.name,
+        imageUrl: item.imageUrl,
+        type: item.type,
+        member: item.members,
+
+        createdBy: item.createdBy,
+      },
+    });
   };
 
-  // Get the other user's data for private chat
-  const getOtherUser = async () => {
-    if (item?.members?.length === 2) {
-      const otherUserId = item?.members.find(
-        (userId: string) => userId !== currentUser?.userId
-      );
-      if (otherUserId) {
-        const userRef = doc(db, "users", otherUserId);
-        const userSnapshot = await getDoc(userRef);
-        setOtherUser(userSnapshot.data());
-      }
-    }
-  };
-
-  // Fetch the last message
   useEffect(() => {
-    if (isGroupChat) {
-      const q = query(
-        collection(doc(db, "chatRooms", roomId), "messages"),
-        orderBy("createdAt", "desc")
-      );
-      const unsub = onSnapshot(q, (snap) => {
-        const allMessages = snap.docs.map((d) => d.data());
-        setLastMessage(allMessages?.[0] || null);
-      });
-      return unsub;
-    } else {
-      getOtherUser(); // For private chat, fetch other user info
-      const q = query(
-        collection(doc(db, "chatRooms", roomId), "messages"),
-        orderBy("createdAt", "desc")
-      );
-      const unsub = onSnapshot(q, (snap) => {
-        const allMessages = snap.docs.map((d) => d.data());
-        setLastMessage(allMessages?.[0] || null);
-      });
-      return unsub;
-    }
+    const q = query(
+      collection(doc(db, "chatRooms", item.chatRoomId), "messages"),
+      orderBy("createdAt", "desc")
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      const allMessages = snap.docs.map((d) => d.data());
+      setLastMessage(allMessages?.[0] || null);
+    });
+    return unsub;
   }, []);
 
   const renderLastMessage = () => {
     if (typeof lastMessage === "undefined") {
       return "Loading...";
     }
+
     if (lastMessage) {
       if (currentUser?.userId === lastMessage.userId) {
         return `You: ${lastMessage?.text}`;
       }
-      return lastMessage?.text;
+      if (isGroupChat) {
+        return `${lastMessage.senderName}: ${lastMessage?.text}`;
+      }
+      return `${lastMessage.text}`;
     } else {
       return "Say Hi 👋";
     }
@@ -102,9 +91,7 @@ const ChatItem = ({ item, currentUser }: any) => {
         <Image
           style={styles.avatar}
           source={{
-            uri: isGroupChat
-              ? item.groupImage || "default_group_image_url" // Default group image if none
-              : otherUser?.profileUrl, // Private chat: use the other user's profile
+            uri: item.imageUrl,
           }}
           placeholder={require("../assets/images/placeholder.png")}
           contentFit="cover"
@@ -112,9 +99,7 @@ const ChatItem = ({ item, currentUser }: any) => {
         <View style={styles.textContainer}>
           <View style={styles.topRow}>
             {/* Render Username */}
-            <Text style={styles.username}>
-              {isGroupChat ? item.name : otherUser?.username || "Unknown User"}
-            </Text>
+            <Text style={styles.username}>{item.name}</Text>
           </View>
           <Text style={styles.preview} numberOfLines={1}>
             {renderLastMessage()?.length > 20

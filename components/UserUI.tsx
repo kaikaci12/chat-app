@@ -8,7 +8,7 @@ interface UserUIProps {
 
 const UserUI = ({ item }: UserUIProps) => {
   return (
-    <TouchableOpacity style={styles.container}>
+    <View style={styles.container}>
       <Image
         placeholder={require("@/assets/images/placeholder.png")}
         source={{ uri: item.profileUrl }}
@@ -17,7 +17,7 @@ const UserUI = ({ item }: UserUIProps) => {
       <View style={styles.info}>
         <Text style={styles.username}>{item.username}</Text>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 };
 
@@ -32,11 +32,12 @@ const styles = StyleSheet.create({
     marginVertical: 6,
     marginHorizontal: 12,
     borderRadius: 12,
-    shadowColor: "#000",
+
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 3, // Android shadow
+    marginBottom: 20,
   },
   avatar: {
     width: 48,
