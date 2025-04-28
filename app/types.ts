@@ -6,6 +6,7 @@ type BaseChatRoom = {
   imageUrl: string;
   name: string;
   createdBy: string;
+  lastMessage: MessageType;
 };
 
 export type PrivateChatRoom = BaseChatRoom & {
@@ -26,5 +27,6 @@ export type MessageType = {
   senderName: string;
   text: string;
   userId: string;
+  seenBy: string[];
 };
 export type ChatRoomType = PrivateChatRoom | GroupChatRoom;

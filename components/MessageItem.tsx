@@ -1,12 +1,13 @@
 import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { Image } from "expo-image";
 import { UserType, MessageType } from "@/app/types";
-import { Timestamp } from "firebase/firestore"; // Make sure to import Timestamp
+import { doc, getDoc, Timestamp } from "firebase/firestore"; // Make sure to import Timestamp
+import { db } from "@/firebaseConfig";
 
 interface MessageItemProps {
   message: MessageType;
@@ -14,16 +15,31 @@ interface MessageItemProps {
 }
 
 const MessageItem = ({ message, currentUser }: MessageItemProps) => {
-  const [showTime, setShowTime] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [seenByNames, setSeenByNames] = useState<string[]>([]);
 
   const isMyMessage = currentUser?.userId === message?.userId;
 
-  // Handle both Firestore Timestamp and string formats
+  useEffect(() => {
+    const fetchSeenByNames = async () => {
+      const seenBy: string[] = [];
+      for (const userId of message.seenBy) {
+        const userRef = doc(db, "users", userId);
+        const userSnapshot = await getDoc(userRef);
+        if (userSnapshot.exists()) {
+          seenBy.push(userSnapshot.data().username);
+        }
+      }
+      setSeenByNames(seenBy);
+    };
+
+    fetchSeenByNames();
+  }, [message.seenBy]);
+
   const getFormattedTime = () => {
     try {
       if (!message?.createdAt?.seconds) return "";
 
-      // Convert Firestore Timestamp to JavaScript Date
       const timestamp = message.createdAt;
       const date = new Date(
         timestamp.seconds * 1000 + (timestamp.nanoseconds || 0) / 1000000
@@ -39,10 +55,14 @@ const MessageItem = ({ message, currentUser }: MessageItemProps) => {
     }
   };
 
+  const getWhoHasSeenTheMessage = () => {
+    return `Seen by ${seenByNames.join(", ")}`;
+  };
+
   const formattedTime = getFormattedTime();
 
   const handlePress = () => {
-    setShowTime((prev) => !prev);
+    setShowDetails((prev) => !prev);
   };
 
   return (
@@ -78,26 +98,27 @@ const MessageItem = ({ message, currentUser }: MessageItemProps) => {
             {message.text}
           </Text>
 
-          {showTime && (
-            <Text
-              style={[
-                styles.timeText,
-                isMyMessage ? styles.myTimeText : styles.otherTimeText,
-              ]}
-            >
-              {formattedTime}
-            </Text>
+          {showDetails && (
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text
+                style={[
+                  styles.timeText,
+                  isMyMessage ? styles.myTimeText : styles.otherTimeText,
+                ]}
+              >
+                {formattedTime}
+              </Text>
+              <Text
+                style={[
+                  styles.timeText,
+                  isMyMessage ? styles.myTimeText : styles.otherTimeText,
+                ]}
+              >
+                {getWhoHasSeenTheMessage()}
+              </Text>
+            </View>
           )}
         </View>
-
-        {isMyMessage && (
-          <Image
-            source={{ uri: message.profileUrl }}
-            placeholder={require("@/assets/images/placeholder.png")}
-            contentFit="cover"
-            style={styles.messageProfile}
-          />
-        )}
       </View>
     </TouchableOpacity>
   );

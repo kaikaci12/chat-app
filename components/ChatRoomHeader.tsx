@@ -9,16 +9,17 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { useNavigation } from "@react-navigation/native";
+import AntDesign from "@expo/vector-icons/AntDesign";
 interface ChatRoomHeaderProps {
   item: any;
   isGroupChat: boolean;
-  groupImage: string | string[];
+  imageUrl: string | string[];
   chatRoomName: string | string[];
 }
 const ChatRoomHeader = ({
   item,
   chatRoomName,
-  groupImage,
+  imageUrl,
   isGroupChat,
 }: ChatRoomHeaderProps) => {
   const navigation = useNavigation();
@@ -35,16 +36,12 @@ const ChatRoomHeader = ({
                 <Ionicons name="arrow-back" size={30} color="green" />
               </TouchableOpacity>
               <View style={styles.profile}>
-                {groupImage ? (
-                  <Image
-                    style={styles.profileImage}
-                    source={{ uri: groupImage }}
-                    placeholder={require("../assets/images/placeholder.png")}
-                    contentFit="cover"
-                  />
-                ) : (
-                  <Ionicons name="person-circle" size={wp(10)} color="gray" />
-                )}
+                <Image
+                  style={styles.profileImage}
+                  source={{ uri: imageUrl }}
+                  placeholder={require("../assets/images/placeholder.png")}
+                  contentFit="cover"
+                />
               </View>
               <Text style={styles.username}>{chatRoomName}</Text>
             </View>
@@ -62,6 +59,9 @@ const ChatRoomHeader = ({
                 onPress={() => console.log("Video call icon pressed")}
               >
                 <Ionicons name="videocam" size={24} color="green" />
+              </TouchableOpacity>
+              <TouchableOpacity>
+                <AntDesign name="infocirlce" size={24} color="green" />
               </TouchableOpacity>
             </View>
           );

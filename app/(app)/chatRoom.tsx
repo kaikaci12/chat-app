@@ -31,6 +31,8 @@ import {
   orderBy,
   onSnapshot,
   getDoc,
+  arrayUnion,
+  updateDoc,
 } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 
@@ -48,14 +50,12 @@ const ChatRoom = () => {
 
   const chatRoomId = useMemo(() => {
     return isGroupChat
-      ? (item.roomId as string)
+      ? (item.chatRoomId as string)
       : (item.chatRoomId as string) ||
           getRoomId(user?.userId, item?.userId as string);
-  }, [isGroupChat, item.roomId, item.chatRoomId, user?.userId, item?.userId]);
-
+  }, [isGroupChat, item.chatRoomId, user?.userId]);
   useEffect(() => {
     if (!chatRoomId || !user?.userId) return;
-
     createChatRoomIfNotExists();
 
     const docRef = doc(db, "chatRooms", chatRoomId);
@@ -63,7 +63,21 @@ const ChatRoom = () => {
     const q = query(messagesRef, orderBy("createdAt", "asc"));
 
     const unsub = onSnapshot(q, (snap) => {
-      const allMessages = snap.docs.map((doc) => doc.data());
+      const allMessages = snap.docs.map((docSnap) => {
+        const data = docSnap.data();
+        const id = docSnap.id; // Message ID
+
+        // If current user hasn't seen it, mark as seen
+        if (data?.seenBy && !data.seenBy.includes(user.userId)) {
+          const messageRef = doc(db, "chatRooms", chatRoomId, "messages", id);
+          updateDoc(messageRef, {
+            seenBy: arrayUnion(user.userId),
+          });
+        }
+
+        return { id, ...data };
+      });
+
       setMessages(allMessages);
     });
 
@@ -71,6 +85,7 @@ const ChatRoom = () => {
       "keyboardDidShow",
       updateScrollView
     );
+
     return () => {
       unsub();
       keyBoardDidShowListener.remove();
@@ -91,6 +106,14 @@ const ChatRoom = () => {
           createdAt: Timestamp.fromDate(new Date()),
 
           type: item.type,
+          lastMessage: {
+            text: "",
+            createdAt: Timestamp.fromDate(new Date()),
+            userId: "",
+            seenBy: [],
+            profileUrl: "",
+            senderName: "",
+          },
         };
 
         if (isGroupChat) {
@@ -130,13 +153,20 @@ const ChatRoom = () => {
       setTextRef("");
       inputRef.current?.clear();
       inputRef.current?.focus();
+      const newMessage = {
+        userId: user.userId,
+        text: message,
+        profileUrl: user.profileUrl,
+        senderName: user.username,
+        createdAt: Timestamp.fromDate(new Date()),
+        seenBy: [user.userId],
+      };
 
       await addDoc(messagesRef, {
-        userId: user?.userId,
-        text: message,
-        profileUrl: user?.profileUrl,
-        senderName: user?.username,
-        createdAt: Timestamp.now(),
+        newMessage,
+      });
+      await updateDoc(docRef, {
+        lastMessage: newMessage,
       });
     } catch (error: any) {
       Alert.alert("Message", error.message);
@@ -159,7 +189,7 @@ const ChatRoom = () => {
         item={item}
         isGroupChat={isGroupChat}
         chatRoomName={item.name}
-        groupImage={item.imageUrl}
+        imageUrl={item.imageUrl}
       />
       <View style={styles.headerBottom} />
 

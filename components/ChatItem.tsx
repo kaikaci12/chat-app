@@ -68,6 +68,10 @@ const ChatItem = ({ item, currentUser }: ChatItemProps) => {
       return "Say Hi 👋";
     }
   };
+  const isUnseen = () => {
+    if (!lastMessage?.seenBy) return false;
+    return !lastMessage.seenBy.includes(currentUser.userId);
+  };
 
   const renderTime = () => {
     if (lastMessage) {
@@ -101,7 +105,10 @@ const ChatItem = ({ item, currentUser }: ChatItemProps) => {
             {/* Render Username */}
             <Text style={styles.username}>{item.name}</Text>
           </View>
-          <Text style={styles.preview} numberOfLines={1}>
+          <Text
+            style={[styles.preview, isUnseen() && styles.unseenPreview]}
+            numberOfLines={1}
+          >
             {renderLastMessage()?.length > 20
               ? `${renderLastMessage().substring(0, 30)}...`
               : renderLastMessage()}
@@ -157,6 +164,10 @@ const styles = StyleSheet.create({
   preview: {
     fontSize: 14,
     color: "#555",
+  },
+  unseenPreview: {
+    color: "#000", // pure black
+    fontWeight: "bold", // bold
   },
 });
 

@@ -20,17 +20,20 @@ import {
   collection,
   doc,
   getDocs,
+  orderBy,
   query,
   setDoc,
   where,
 } from "firebase/firestore";
+import { Image } from "expo-image";
 import { db, usersRef } from "@/firebaseConfig";
 import { Ionicons } from "@expo/vector-icons";
 import uuid from "react-native-uuid";
 import { useRouter } from "expo-router";
 import { ChatRoomType, UserType } from "../types";
-import UserUI from "@/components/UserUI";
+
 import ContactModal from "@/components/ContactModal";
+import { Timestamp } from "firebase/firestore";
 
 const Home = () => {
   const { user } = useAuth();
@@ -70,13 +73,15 @@ const Home = () => {
       setLoading(true);
       const q = query(
         collection(db, "chatRooms"),
-        where("members", "array-contains", user?.userId)
+        where("members", "array-contains", user?.userId),
+        orderBy("lastMessage.createdAt", "desc")
       );
       const querySnapshot = await getDocs(q);
       let rooms: any[] = [];
       querySnapshot.forEach((doc) => {
         rooms.push(doc.data());
       });
+
       setChatRooms(rooms);
     } catch (error) {
       console.error("Error fetching chat rooms:", error);
@@ -94,13 +99,13 @@ const Home = () => {
     const roomRef = doc(db, "chatRooms", roomId);
 
     await setDoc(roomRef, {
-      roomId,
+      chatRoomId: roomId,
       type: "group",
       name: groupName,
-      groupImage: groupImage || "",
+      ImageUrl: groupImage,
       members: memberIds,
       createdBy: user.userId,
-      createdAt: new Date(),
+      createdAt: Timestamp.fromDate(new Date()),
     });
 
     setGroupName("");
@@ -128,6 +133,9 @@ const Home = () => {
       getChatRooms(); // Fetch chat rooms where current user is a member
     }
   }, [user?.userId]);
+  const filteredGroupUsers = users.filter((user) =>
+    user.username.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <View style={styles.container}>
@@ -161,19 +169,50 @@ const Home = () => {
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Create Group</Text>
-            <TouchableOpacity onPress={() => setGroupModalVisible(false)}>
-              <Ionicons name="close" size={28} color="red" />
+            <TouchableOpacity
+              onPress={() => {
+                setGroupModalVisible(false);
+                setSearchQuery("");
+              }}
+              style={styles.closeButton}
+            >
+              <Ionicons name="close" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
+
+          <View style={styles.searchContainer}>
+            <Ionicons
+              name="search"
+              size={20}
+              color="#777"
+              style={styles.searchIcon}
+            />
+            <TextInput
+              placeholder="Search users..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              style={styles.searchInput}
+              placeholderTextColor="#777"
+            />
+          </View>
+
           <TextInput
             placeholder="Group Name"
+            placeholderTextColor="#777"
             value={groupName}
             onChangeText={setGroupName}
             style={styles.input}
           />
+
+          <Text style={styles.selectedCount}>
+            {selectedGroupUsers.length}{" "}
+            {selectedGroupUsers.length === 1 ? "member" : "members"} selected
+          </Text>
+
           <FlatList
-            data={users}
+            data={filteredGroupUsers}
             keyExtractor={(item) => item.userId}
+            contentContainerStyle={styles.userList}
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={[
@@ -183,15 +222,35 @@ const Home = () => {
                 ]}
                 onPress={() => toggleGroupUser(item)}
               >
-                <Text>{item.username}</Text>
+                <View style={styles.userInfo}>
+                  <Image
+                    style={styles.avatar}
+                    source={{ uri: item.profileUrl }}
+                    placeholder={require("@/assets/images/placeholder.png")}
+                    contentFit="cover"
+                  />
+                  <Text style={styles.username}>{item.username}</Text>
+                </View>
+                {selectedGroupUsers.find((u) => u.userId === item.userId) && (
+                  <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+                )}
               </TouchableOpacity>
             )}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>No users found</Text>
+            }
           />
+
           <TouchableOpacity
-            style={styles.submitButton}
+            style={[
+              styles.submitButton,
+              (!groupName.trim() || selectedGroupUsers.length === 0) &&
+                styles.disabledButton,
+            ]}
             onPress={createGroupRoom}
+            disabled={!groupName.trim() || selectedGroupUsers.length === 0}
           >
-            <Text style={{ color: "white" }}>Create Group</Text>
+            <Text style={styles.submitButtonText}>Create Group</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -218,39 +277,126 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    padding: 20,
-    backgroundColor: "#fff",
+    padding: hp(2),
+    backgroundColor: "#f8f9fa",
   },
   modalHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: hp(2),
     justifyContent: "space-between",
+    marginBottom: hp(2),
+    paddingBottom: hp(1),
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
   },
   modalTitle: {
     fontSize: hp(2.5),
     fontWeight: "bold",
+    color: "#333",
   },
-  userItem: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderColor: "#ddd",
+  closeButton: {
+    backgroundColor: "#ff4444",
+    borderRadius: 20,
+    padding: 5,
   },
-  selectedUser: {
-    backgroundColor: "#d0f0c0",
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    marginBottom: hp(2),
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    height: hp(5),
+    color: "#333",
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 15,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: hp(2),
+    fontSize: hp(1.8),
+    color: "#333",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  selectedCount: {
+    color: "#666",
+    marginBottom: hp(1),
+    fontSize: hp(1.6),
+  },
+  userList: {
+    paddingBottom: hp(10),
+  },
+  userItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: hp(1.5),
+    paddingHorizontal: wp(3),
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    marginBottom: hp(1),
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  selectedUser: {
+    backgroundColor: "#e8f5e9",
+    borderLeftWidth: 3,
+    borderLeftColor: "#4CAF50",
+  },
+  userInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  avatar: {
+    width: wp(10),
+    height: wp(10),
+    borderRadius: wp(5),
+    marginRight: wp(3),
+  },
+  username: {
+    fontSize: hp(1.8),
+    color: "#333",
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#777",
+    marginTop: hp(2),
+    fontSize: hp(1.8),
   },
   submitButton: {
-    backgroundColor: "green",
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: "#4CAF50",
+    padding: hp(1.8),
+    borderRadius: 10,
     alignItems: "center",
-    marginTop: 10,
+    justifyContent: "center",
+    marginTop: hp(1),
+    elevation: 3,
+  },
+  disabledButton: {
+    backgroundColor: "#cccccc",
+  },
+  submitButtonText: {
+    color: "#fff",
+    fontSize: hp(1.8),
+    fontWeight: "bold",
   },
 });
