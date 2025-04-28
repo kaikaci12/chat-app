@@ -155,9 +155,7 @@ const ChatRoom = () => {
         seenBy: [user.userId],
       };
 
-      await addDoc(messagesRef, {
-        newMessage,
-      });
+      await addDoc(messagesRef, newMessage);
       await updateDoc(docRef, {
         lastMessage: newMessage,
       });
