@@ -15,12 +15,16 @@ interface ChatRoomHeaderProps {
   isGroupChat: boolean;
   imageUrl: string | string[];
   chatRoomName: string | string[];
+  showModal: boolean;
+  setShowModal: (modal: boolean) => void;
 }
 const ChatRoomHeader = ({
   item,
   chatRoomName,
   imageUrl,
   isGroupChat,
+  setShowModal,
+  showModal,
 }: ChatRoomHeaderProps) => {
   const navigation = useNavigation();
 
@@ -60,7 +64,7 @@ const ChatRoomHeader = ({
               >
                 <Ionicons name="videocam" size={24} color="green" />
               </TouchableOpacity>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowModal(true)}>
                 <AntDesign name="infocirlce" size={24} color="green" />
               </TouchableOpacity>
             </View>

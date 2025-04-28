@@ -93,13 +93,13 @@ const Home = () => {
   const createGroupRoom = async () => {
     if (!groupName.trim() || selectedGroupUsers.length === 0) return;
 
-    const roomId = uuid.v4();
+    const groupRoomId = uuid.v4();
     const memberIds = [user.userId, ...selectedGroupUsers.map((u) => u.userId)];
 
-    const roomRef = doc(db, "chatRooms", roomId);
+    const roomRef = doc(db, "chatRooms", groupRoomId);
 
     await setDoc(roomRef, {
-      chatRoomId: roomId,
+      chatRoomId: groupRoomId,
       type: "group",
       name: groupName,
       ImageUrl: groupImage,

@@ -19,7 +19,7 @@ const MessageItem = ({ message, currentUser }: MessageItemProps) => {
   const [seenByNames, setSeenByNames] = useState<string[]>([]);
 
   const isMyMessage = currentUser?.userId === message?.userId;
-
+  console.log(message);
   useEffect(() => {
     const fetchSeenByNames = async () => {
       const seenBy: string[] = [];

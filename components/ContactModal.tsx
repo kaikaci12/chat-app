@@ -47,18 +47,20 @@ const ContactModal = ({
     setFilteredUsers(users);
   }, [users]);
   const handleContactPress = (user: UserType) => {
-    console.log("clicked on contact");
     const chatRoomId = getRoomId(currentUser.userId, user.userId);
+
     router.push({
       pathname: "/chatRoom",
       params: {
-        userId: user.userId,
-        username: user.username,
-        profileUrl: user.profileUrl,
+        imageUrl: user.profileUrl || "",
         chatRoomId: chatRoomId,
         type: "private",
+        name: user.username,
+        members: [currentUser.userId, user.userId],
+        createdBy: currentUser.userId,
       },
     });
+
     setContactModalVisible(false);
   };
 

@@ -43,6 +43,7 @@ const ChatRoom = () => {
 
   const [messages, setMessages] = useState<any[]>([]);
   const [textRef, setTextRef] = useState<string>("");
+  const [showModal, setShowModal] = useState(false);
   const inputRef = useRef<any | null>(null);
   const scrollViewRef = useRef<any | null>(null);
 
@@ -104,7 +105,10 @@ const ChatRoom = () => {
         const chatRoomData: any = {
           chatRoomId,
           createdAt: Timestamp.fromDate(new Date()),
-
+          members: item.members,
+          name: item.name,
+          imageUrl: item.imageUrl,
+          createdBy: item.createdBy,
           type: item.type,
           lastMessage: {
             text: "",
@@ -116,19 +120,8 @@ const ChatRoom = () => {
           },
         };
 
-        if (isGroupChat) {
-          chatRoomData.members = item.members;
-          chatRoomData.name = item.groupName;
-          chatRoomData.imageUrl = item.groupImage;
-          chatRoomData.createdBy = item.userId;
-        } else {
-          chatRoomData.members = [user.userId, item.userId];
-          chatRoomData.name = item.username;
-          chatRoomData.imageUrl = item.profileUrl;
-        }
-
         await setDoc(docRef, chatRoomData);
-        console.log("Chat room created successfully");
+        console.log("Chat room created successfully", chatRoomData);
       }
     } catch (error) {
       console.error("Error creating chat room:", error);
@@ -187,6 +180,8 @@ const ChatRoom = () => {
       <StatusBar style="dark" />
       <ChatRoomHeader
         item={item}
+        setShowModal={setShowModal}
+        showModal={showModal}
         isGroupChat={isGroupChat}
         chatRoomName={item.name}
         imageUrl={item.imageUrl}
