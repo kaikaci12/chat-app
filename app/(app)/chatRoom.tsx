@@ -52,6 +52,7 @@ const ChatRoom = () => {
   const scrollViewRef = useRef<any | null>(null);
 
   const isGroupChat = useMemo(() => item.type === "group", [item.type]);
+  const [chatRoom, setChatRoom] = useState<any>(item);
 
   const chatRoomId = useMemo(() => {
     return isGroupChat
@@ -60,7 +61,7 @@ const ChatRoom = () => {
           getRoomId(user?.userId, item?.userId as string);
   }, [isGroupChat, item.chatRoomId, user?.userId]);
 
-  const [groupChatUsers, setGroupChatUsers] = useState<UserType[]>([]);
+  const [allUsers, setAllUsers] = useState<UserType[]>([]);
   useEffect(() => {
     if (!chatRoomId || !user?.userId) return;
 
@@ -68,12 +69,11 @@ const ChatRoom = () => {
     const messagesRef = collection(docRef, "messages");
     const q = query(messagesRef, orderBy("createdAt", "asc"));
 
-    const unsub = onSnapshot(q, (snap) => {
+    const messagesUnsub = onSnapshot(q, (snap) => {
       const allMessages = snap.docs.map((docSnap) => {
         const data = docSnap.data();
-        const id = docSnap.id; // Message ID
+        const id = docSnap.id;
 
-        // If current user hasn't seen it, mark as seen
         if (data?.seenBy && !data.seenBy.includes(user.userId)) {
           const messageRef = doc(db, "chatRooms", chatRoomId, "messages", id);
           updateDoc(messageRef, {
@@ -87,41 +87,49 @@ const ChatRoom = () => {
       setMessages(allMessages);
     });
 
+    // ✅ Listen to chatRoom changes
+    const chatRoomUnsub = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const updatedRoom = docSnap.data();
+        updatedRoom.members = parseMembers(updatedRoom.members);
+        setChatRoom(updatedRoom);
+        console.log("chatRoom updated", updatedRoom);
+      }
+    });
+
     const keyBoardDidShowListener = Keyboard.addListener(
       "keyboardDidShow",
       updateScrollView
     );
-    getGroupChatUsers();
+
+    getAllUsers();
 
     return () => {
-      unsub();
+      messagesUnsub();
+      chatRoomUnsub();
       keyBoardDidShowListener.remove();
     };
   }, [chatRoomId]);
-  const getGroupChatUsers = async () => {
-    if (item.type !== "group") return;
+
+  function parseMembers(members: string | string[]): string[] {
+    if (Array.isArray(members)) return members;
+    return JSON.parse(members);
+  }
+
+  const getAllUsers = async () => {
     try {
-      const members = item.members;
-      let allUsers: UserType[] = [];
-
-      // Firestore 'in' clause supports max 10 values
-      const chunkSize = 10;
-      for (let i = 0; i < members.length; i += chunkSize) {
-        const chunk = members.slice(i, i + chunkSize);
-        const q = query(usersRef, where("userId", "in", chunk));
-        const querySnapshot = await getDocs(q);
-
-        querySnapshot.forEach((doc) => {
-          allUsers.push({ ...doc.data() } as UserType);
-        });
-      }
-
-      setGroupChatUsers(allUsers);
+      const q = query(usersRef, where("userId", "!=", user?.userId));
+      const querySnapshot = await getDocs(q);
+      let data: any = [];
+      querySnapshot.forEach((doc) => {
+        data.push({ ...doc.data() });
+      });
+      setAllUsers(data);
     } catch (error) {
-      console.error("Error fetching group chat users:", error);
+      console.error("Error fetching users:", error);
+    } finally {
     }
   };
-
   const createChatRoomIfNotExists = async () => {
     if (!user?.userId || !chatRoomId) return;
 
@@ -134,7 +142,8 @@ const ChatRoom = () => {
         const chatRoomData: any = {
           chatRoomId,
           createdAt: Timestamp.fromDate(new Date()),
-          members: item.members.toString().split(","),
+          members: parseMembers(item.members),
+
           name: item.name,
           imageUrl: item.imageUrl,
           createdBy: item.createdBy,
@@ -208,12 +217,12 @@ const ChatRoom = () => {
     <View style={styles.container}>
       <StatusBar style="dark" />
       <ChatRoomHeader
-        item={item}
+        item={chatRoom} // Use chatRoom state here
         setShowModal={setShowModal}
         showModal={showModal}
         isGroupChat={isGroupChat}
-        chatRoomName={item.name}
-        imageUrl={item.imageUrl}
+        chatRoomName={chatRoom.name} // Dynamically render updated name
+        imageUrl={chatRoom.imageUrl} // Dynamically render updated image
       />
       <View style={styles.headerBottom} />
 
@@ -257,6 +266,7 @@ const ChatRoom = () => {
       <ManageGroupModal
         visible={showModal}
         chatRoom={item}
+        allUsers={allUsers}
         currentUser={user}
         onClose={() => setShowModal(false)}
       />

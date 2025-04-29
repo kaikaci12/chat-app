@@ -31,7 +31,7 @@ const ChatItem = ({ item, currentUser }: ChatItemProps) => {
         name: item.name,
         imageUrl: item.imageUrl,
         type: item.type,
-        member: item.members,
+        members: JSON.stringify(item.members),
 
         createdBy: item.createdBy,
       },

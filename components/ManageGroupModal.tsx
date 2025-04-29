@@ -17,7 +17,7 @@ import { UserType, ChatRoomType } from "@/app/types";
 interface Props {
   visible: boolean;
   onClose: () => void;
-  chatRoom: ChatRoomType;
+  chatRoom: any;
   currentUser: UserType;
   allUsers: UserType[];
 }
@@ -36,9 +36,12 @@ export default function ManageGroupModal({
   const [addingUsers, setAddingUsers] = useState<UserType[]>([]);
 
   useEffect(() => {
+    console.log("members", chatRoom.members);
+
     const existing = allUsers.filter((u) =>
       chatRoom.members.includes(u.userId)
     );
+
     setMembers(existing);
   }, [chatRoom.members, allUsers]);
 
@@ -109,6 +112,7 @@ export default function ManageGroupModal({
                 <Image
                   source={{ uri: item.profileUrl }}
                   style={styles.avatar}
+                  placeholder={require("@/assets/images/placeholder.png")}
                 />
                 <Text style={styles.username}>{item.username}</Text>
               </View>
@@ -136,7 +140,11 @@ export default function ManageGroupModal({
               style={styles.userRow}
               onPress={() => handleAddUser(item)}
             >
-              <Image source={{ uri: item.profileUrl }} style={styles.avatar} />
+              <Image
+                placeholder={require("@/assets/images/placeholder.png")}
+                source={{ uri: item.profileUrl }}
+                style={styles.avatar}
+              />
               <Text style={styles.username}>{item.username}</Text>
               <Ionicons name="add-circle" size={20} color="#4CAF50" />
             </TouchableOpacity>

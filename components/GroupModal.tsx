@@ -14,6 +14,7 @@ import { Timestamp, doc, setDoc } from "firebase/firestore";
 import uuid from "react-native-uuid";
 import { db } from "@/firebaseConfig";
 import { UserType } from "@/app/types";
+import { useRouter } from "expo-router";
 
 interface Props {
   visible: boolean;
@@ -27,7 +28,7 @@ const GroupModal = ({ visible, onClose, users, currentUser }: Props) => {
   const [groupName, setGroupName] = useState("");
   const [groupImage, setGroupImage] = useState("");
   const [selectedGroupUsers, setSelectedGroupUsers] = useState<UserType[]>([]);
-
+  const router = useRouter();
   const filteredGroupUsers = users.filter((user) =>
     user.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -84,6 +85,17 @@ const GroupModal = ({ visible, onClose, users, currentUser }: Props) => {
 
     onClose(); // Close modal
     console.log("groupChat created successfully");
+    router.push({
+      pathname: "/chatRoom",
+      params: {
+        chatRoomId: groupRoomId.toString(),
+        name: groupName,
+        imageUrl: groupImage,
+        type: "group",
+        members: JSON.stringify(memberIds), // important!
+        createdBy: currentUser.userId,
+      },
+    });
   };
 
   return (

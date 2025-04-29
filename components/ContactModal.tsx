@@ -56,7 +56,7 @@ const ContactModal = ({
         chatRoomId: chatRoomId,
         type: "private",
         name: user.username,
-        members: [currentUser.userId, user.userId],
+        members: JSON.stringify([currentUser.userId, user.userId]),
         createdBy: currentUser.userId,
       },
     });
