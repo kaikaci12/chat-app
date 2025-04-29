@@ -68,7 +68,7 @@ const GroupModal = ({ visible, onClose, users, currentUser }: Props) => {
       createdAt: Timestamp.fromDate(new Date()),
       lastMessage: {
         text: "",
-        createdAt: Timestamp.fromDate(new Date()), // or use null if you're consistent
+        createdAt: Timestamp.fromDate(new Date()),
         userId: "",
         seenBy: [],
         profileUrl: "",

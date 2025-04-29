@@ -39,21 +39,22 @@ const ChatItem = ({ item, currentUser }: ChatItemProps) => {
   };
 
   const renderLastMessage = () => {
-    if (typeof lastMessage === "undefined") {
+    if (typeof lastMessage == "undefined") {
       return "Loading...";
     }
-
-    if (lastMessage) {
-      if (currentUser?.userId === lastMessage?.userId) {
-        return `You: ${lastMessage?.text}`;
-      }
-      if (isGroupChat) {
-        return `${lastMessage.senderName}: ${lastMessage?.text}`;
-      }
-      return `${lastMessage.text}`;
-    } else {
+    if (!lastMessage || !lastMessage.text) {
       return "Say Hi 👋";
     }
+
+    if (currentUser?.userId === lastMessage.userId) {
+      return `You: ${lastMessage.text}`;
+    }
+
+    if (isGroupChat && lastMessage.senderName) {
+      return `${lastMessage.senderName}: ${lastMessage.text}`;
+    }
+
+    return lastMessage.text;
   };
   const isUnseen = () => {
     if (!lastMessage?.seenBy) return false;

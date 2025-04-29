@@ -54,11 +54,17 @@ const MessageItem = ({ message, currentUser }: MessageItemProps) => {
       return "";
     }
   };
-
   const getWhoHasSeenTheMessage = () => {
-    return `Seen by ${seenByNames.join(", ")}`;
-  };
+    if (seenByNames.length > 4) {
+      const slicedNames = seenByNames.slice(0, 4);
+      const remainingCount = seenByNames.length - 4;
+      return `Seen by ${slicedNames.join(", ")} and ${remainingCount} others`;
+    }
 
+    if (seenByNames.length > 0) {
+      return `Seen by ${seenByNames.join(", ")}`;
+    }
+  };
   const formattedTime = getFormattedTime();
 
   const handlePress = () => {

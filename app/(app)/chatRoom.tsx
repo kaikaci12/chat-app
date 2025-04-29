@@ -31,10 +31,14 @@ import {
   orderBy,
   onSnapshot,
   getDoc,
+  where,
   arrayUnion,
+  getDocs,
   updateDoc,
 } from "firebase/firestore";
-import { db } from "@/firebaseConfig";
+import { db, usersRef } from "@/firebaseConfig";
+import ManageGroupModal from "@/components/ManageGroupModal";
+import { UserType } from "../types";
 
 const ChatRoom = () => {
   const item = useLocalSearchParams();
@@ -43,7 +47,7 @@ const ChatRoom = () => {
 
   const [messages, setMessages] = useState<any[]>([]);
   const [textRef, setTextRef] = useState<string>("");
-  const [showModal, setShowModal] = useState(false);
+  const [showModal, setShowModal] = useState<boolean>(false);
   const inputRef = useRef<any | null>(null);
   const scrollViewRef = useRef<any | null>(null);
 
@@ -55,6 +59,8 @@ const ChatRoom = () => {
       : (item.chatRoomId as string) ||
           getRoomId(user?.userId, item?.userId as string);
   }, [isGroupChat, item.chatRoomId, user?.userId]);
+
+  const [groupChatUsers, setGroupChatUsers] = useState<UserType[]>([]);
   useEffect(() => {
     if (!chatRoomId || !user?.userId) return;
 
@@ -85,12 +91,36 @@ const ChatRoom = () => {
       "keyboardDidShow",
       updateScrollView
     );
+    getGroupChatUsers();
 
     return () => {
       unsub();
       keyBoardDidShowListener.remove();
     };
   }, [chatRoomId]);
+  const getGroupChatUsers = async () => {
+    if (item.type !== "group") return;
+    try {
+      const members = item.members;
+      let allUsers: UserType[] = [];
+
+      // Firestore 'in' clause supports max 10 values
+      const chunkSize = 10;
+      for (let i = 0; i < members.length; i += chunkSize) {
+        const chunk = members.slice(i, i + chunkSize);
+        const q = query(usersRef, where("userId", "in", chunk));
+        const querySnapshot = await getDocs(q);
+
+        querySnapshot.forEach((doc) => {
+          allUsers.push({ ...doc.data() } as UserType);
+        });
+      }
+
+      setGroupChatUsers(allUsers);
+    } catch (error) {
+      console.error("Error fetching group chat users:", error);
+    }
+  };
 
   const createChatRoomIfNotExists = async () => {
     if (!user?.userId || !chatRoomId) return;
@@ -224,6 +254,12 @@ const ChatRoom = () => {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+      <ManageGroupModal
+        visible={showModal}
+        chatRoom={item}
+        currentUser={user}
+        onClose={() => setShowModal(false)}
+      />
     </View>
   );
 };

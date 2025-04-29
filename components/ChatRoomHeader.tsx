@@ -64,9 +64,11 @@ const ChatRoomHeader = ({
               >
                 <Ionicons name="videocam" size={24} color="green" />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowModal(true)}>
-                <AntDesign name="infocirlce" size={24} color="green" />
-              </TouchableOpacity>
+              {isGroupChat && (
+                <TouchableOpacity onPress={() => setShowModal(true)}>
+                  <AntDesign name="infocirlce" size={24} color="green" />
+                </TouchableOpacity>
+              )}
             </View>
           );
         },
