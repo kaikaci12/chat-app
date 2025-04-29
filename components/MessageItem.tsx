@@ -19,7 +19,7 @@ const MessageItem = ({ message, currentUser }: MessageItemProps) => {
   const [seenByNames, setSeenByNames] = useState<string[]>([]);
 
   const isMyMessage = currentUser?.userId === message?.userId;
-  console.log(message);
+
   useEffect(() => {
     const fetchSeenByNames = async () => {
       const seenBy: string[] = [];
@@ -99,7 +99,9 @@ const MessageItem = ({ message, currentUser }: MessageItemProps) => {
           </Text>
 
           {showDetails && (
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={{ flexDirection: "column", alignItems: "center", gap: 5 }}
+            >
               <Text
                 style={[
                   styles.timeText,

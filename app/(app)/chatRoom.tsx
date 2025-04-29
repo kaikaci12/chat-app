@@ -57,7 +57,6 @@ const ChatRoom = () => {
   }, [isGroupChat, item.chatRoomId, user?.userId]);
   useEffect(() => {
     if (!chatRoomId || !user?.userId) return;
-    createChatRoomIfNotExists();
 
     const docRef = doc(db, "chatRooms", chatRoomId);
     const messagesRef = collection(docRef, "messages");
@@ -105,7 +104,7 @@ const ChatRoom = () => {
         const chatRoomData: any = {
           chatRoomId,
           createdAt: Timestamp.fromDate(new Date()),
-          members: item.members,
+          members: item.members.toString().split(","),
           name: item.name,
           imageUrl: item.imageUrl,
           createdBy: item.createdBy,
@@ -140,12 +139,14 @@ const ChatRoom = () => {
     if (!message || !user?.userId || !chatRoomId) return;
 
     try {
-      const docRef = doc(db, "chatRooms", chatRoomId);
-      const messagesRef = collection(docRef, "messages");
-
       setTextRef("");
       inputRef.current?.clear();
       inputRef.current?.focus();
+
+      await createChatRoomIfNotExists();
+      const docRef = doc(db, "chatRooms", chatRoomId);
+      const messagesRef = collection(docRef, "messages");
+
       const newMessage = {
         userId: user.userId,
         text: message,

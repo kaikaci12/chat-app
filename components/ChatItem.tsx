@@ -18,9 +18,8 @@ interface ChatItemProps {
   currentUser: UserType;
 }
 const ChatItem = ({ item, currentUser }: ChatItemProps) => {
-  console.log("item: ", item);
   const router = useRouter();
-  const [lastMessage, setLastMessage] = useState<any | null>(null);
+  const lastMessage = item.lastMessage;
 
   const isGroupChat = item.type === "group";
 
@@ -39,25 +38,13 @@ const ChatItem = ({ item, currentUser }: ChatItemProps) => {
     });
   };
 
-  useEffect(() => {
-    const q = query(
-      collection(doc(db, "chatRooms", item.chatRoomId), "messages"),
-      orderBy("createdAt", "desc")
-    );
-    const unsub = onSnapshot(q, (snap) => {
-      const allMessages = snap.docs.map((d) => d.data());
-      setLastMessage(allMessages?.[0] || null);
-    });
-    return unsub;
-  }, []);
-
   const renderLastMessage = () => {
     if (typeof lastMessage === "undefined") {
       return "Loading...";
     }
 
     if (lastMessage) {
-      if (currentUser?.userId === lastMessage.userId) {
+      if (currentUser?.userId === lastMessage?.userId) {
         return `You: ${lastMessage?.text}`;
       }
       if (isGroupChat) {
@@ -70,7 +57,7 @@ const ChatItem = ({ item, currentUser }: ChatItemProps) => {
   };
   const isUnseen = () => {
     if (!lastMessage?.seenBy) return false;
-    return !lastMessage.seenBy.includes(currentUser.userId);
+    return !lastMessage.seenBy.includes(currentUser?.userId);
   };
 
   const renderTime = () => {

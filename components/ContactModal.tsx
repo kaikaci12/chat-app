@@ -85,9 +85,9 @@ const ContactModal = ({
         <FlatList
           data={filteredUsers}
           keyExtractor={(item) => item.userId}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <TouchableOpacity
-              key={item.userId}
+              key={index}
               onPress={() => handleContactPress(item)}
             >
               <UserUI item={item} />

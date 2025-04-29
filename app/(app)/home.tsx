@@ -22,8 +22,9 @@ import {
   getDocs,
   orderBy,
   query,
-  setDoc,
   where,
+  setDoc,
+  onSnapshot,
 } from "firebase/firestore";
 import { Image } from "expo-image";
 import { db, usersRef } from "@/firebaseConfig";
@@ -34,7 +35,7 @@ import { ChatRoomType, UserType } from "../types";
 
 import ContactModal from "@/components/ContactModal";
 import { Timestamp } from "firebase/firestore";
-
+import GroupModal from "@/components/GroupModal";
 const Home = () => {
   const { user } = useAuth();
   const [users, setUsers] = useState<UserType[]>([]);
@@ -68,74 +69,60 @@ const Home = () => {
     }
   };
 
-  const getChatRooms = async () => {
-    try {
-      setLoading(true);
-      const q = query(
-        collection(db, "chatRooms"),
-        where("members", "array-contains", user?.userId),
-        orderBy("lastMessage.createdAt", "desc")
-      );
-      const querySnapshot = await getDocs(q);
-      let rooms: any[] = [];
+  //  const getChatRooms = async () => {
+  //     try {
+  //       setLoading(true);
+  //       const q = query(
+  //         collection(db, "chatRooms"),
+  //         where("members", "array-contains", user?.userId),
+  //         orderBy("lastMessage.createdAt", "desc")
+  //       );
+  //       const querySnapshot = await getDocs(q);
+  //       let rooms: any[] = [];
+  //       querySnapshot.forEach((doc) => {
+  //         rooms.push(doc.data());
+  //       });
+
+  //       setChatRooms(rooms);
+  //     } catch (error) {
+  //       console.error("Error fetching chat rooms:", error);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  useEffect(() => {
+    if (!user?.userId) return;
+
+    // Real-time listener for chat rooms
+    const q = query(
+      collection(db, "chatRooms"),
+      where("members", "array-contains", user.userId),
+      orderBy("lastMessage.createdAt", "desc")
+    );
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const rooms: any[] = [];
       querySnapshot.forEach((doc) => {
         rooms.push(doc.data());
       });
-
+      console.log("rooms: ", rooms);
       setChatRooms(rooms);
-    } catch (error) {
-      console.error("Error fetching chat rooms:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createGroupRoom = async () => {
-    if (!groupName.trim() || selectedGroupUsers.length === 0) return;
-
-    const groupRoomId = uuid.v4();
-    const memberIds = [user.userId, ...selectedGroupUsers.map((u) => u.userId)];
-
-    const roomRef = doc(db, "chatRooms", groupRoomId);
-
-    await setDoc(roomRef, {
-      chatRoomId: groupRoomId,
-      type: "group",
-      name: groupName,
-      ImageUrl: groupImage,
-      members: memberIds,
-      createdBy: user.userId,
-      createdAt: Timestamp.fromDate(new Date()),
     });
 
-    setGroupName("");
-    setGroupImage("");
-    setSelectedGroupUsers([]);
-    setGroupModalVisible(false);
-    getChatRooms(); // Fetch updated chat rooms
-  };
-
-  // Toggle Group User Selection
-  const toggleGroupUser = (userToAdd: any) => {
-    if (selectedGroupUsers.find((u) => u.userId === userToAdd.userId)) {
-      setSelectedGroupUsers((prev) =>
-        prev.filter((u) => u.userId !== userToAdd.userId)
-      );
-    } else {
-      setSelectedGroupUsers((prev) => [...prev, userToAdd]);
-    }
-  };
-
-  // Fetch data on component mount
-  useEffect(() => {
-    if (user?.userId) {
-      getUsers();
-      getChatRooms(); // Fetch chat rooms where current user is a member
-    }
+    return () => unsubscribe();
   }, [user?.userId]);
-  const filteredGroupUsers = users.filter((user) =>
-    user.username.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+
+  useEffect(() => {
+    if (!user?.userId) return;
+    getUsers(); // Only runs once when user logs in
+  }, [user?.userId]);
+
+  // // Fetch data on component mount
+  // useEffect(() => {
+  //   if (user?.userId) {
+  //     getUsers();
+  //     getChatRooms(); // Fetch chat rooms where current user is a member
+  //   }
+  // }, [user?.userId]);
 
   return (
     <View style={styles.container}>
@@ -164,96 +151,12 @@ const Home = () => {
         users={users}
       />
 
-      {/* Group Modal */}
-      <Modal visible={groupModalVisible} animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Create Group</Text>
-            <TouchableOpacity
-              onPress={() => {
-                setGroupModalVisible(false);
-                setSearchQuery("");
-              }}
-              style={styles.closeButton}
-            >
-              <Ionicons name="close" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.searchContainer}>
-            <Ionicons
-              name="search"
-              size={20}
-              color="#777"
-              style={styles.searchIcon}
-            />
-            <TextInput
-              placeholder="Search users..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              style={styles.searchInput}
-              placeholderTextColor="#777"
-            />
-          </View>
-
-          <TextInput
-            placeholder="Group Name"
-            placeholderTextColor="#777"
-            value={groupName}
-            onChangeText={setGroupName}
-            style={styles.input}
-          />
-
-          <Text style={styles.selectedCount}>
-            {selectedGroupUsers.length}{" "}
-            {selectedGroupUsers.length === 1 ? "member" : "members"} selected
-          </Text>
-
-          <FlatList
-            data={filteredGroupUsers}
-            keyExtractor={(item) => item.userId}
-            contentContainerStyle={styles.userList}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[
-                  styles.userItem,
-                  selectedGroupUsers.find((u) => u.userId === item.userId) &&
-                    styles.selectedUser,
-                ]}
-                onPress={() => toggleGroupUser(item)}
-              >
-                <View style={styles.userInfo}>
-                  <Image
-                    style={styles.avatar}
-                    source={{ uri: item.profileUrl }}
-                    placeholder={require("@/assets/images/placeholder.png")}
-                    contentFit="cover"
-                  />
-                  <Text style={styles.username}>{item.username}</Text>
-                </View>
-                {selectedGroupUsers.find((u) => u.userId === item.userId) && (
-                  <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
-                )}
-              </TouchableOpacity>
-            )}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>No users found</Text>
-            }
-          />
-
-          <TouchableOpacity
-            style={[
-              styles.submitButton,
-              (!groupName.trim() || selectedGroupUsers.length === 0) &&
-                styles.disabledButton,
-            ]}
-            onPress={createGroupRoom}
-            disabled={!groupName.trim() || selectedGroupUsers.length === 0}
-          >
-            <Text style={styles.submitButtonText}>Create Group</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
+      <GroupModal
+        visible={groupModalVisible}
+        onClose={() => setGroupModalVisible(false)}
+        users={users}
+        currentUser={user}
+      />
     </View>
   );
 };
